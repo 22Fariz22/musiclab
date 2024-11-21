@@ -1,0 +1,25 @@
+server:
+  AppVersion: 1.0.0
+  Port: :8080
+  Mode: Development
+  ReadTimeout: 10
+  WriteTimeout: 10
+  CtxDefaultTimeout: 12
+  Debug: false
+
+logger:
+  Development: true
+  DisableCaller: false
+  DisableStacktrace: false
+  Encoding: console
+  Level: info
+
+postgres:
+  PostgresqlHost: postgresql
+  PostgresqlPort: 5432
+  PostgresqlUser: postgres
+  PostgresqlPassword: postgres
+  PostgresqlDbname: music_db
+  PostgresqlSslmode: false
+  PgDriver: pgx
+
