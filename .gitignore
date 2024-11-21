@@ -16,6 +16,7 @@
  media
 
 # Enviroment files
+main
 .env
 .idea
 pgdata
