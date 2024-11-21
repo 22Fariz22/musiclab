@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  web:
+    container_name: api
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - postgresql
+    restart: always
+    volumes:
+      - ./:/app
+    networks:
+      - web_api
+
+  postgresql:
+    image: postgres:15.4
+    container_name: api_postgresql
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=music_db
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    networks:
+      - web_api
+
+networks:
+  web_api:
+    driver: bridge
