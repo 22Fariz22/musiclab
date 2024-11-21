@@ -15,6 +15,7 @@
  vendor/
  media
 
-
+# Enviroment files
+.env
 .idea
 pgdata
