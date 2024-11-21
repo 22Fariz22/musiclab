@@ -2,28 +2,19 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/internal/server"
 	"github.com/22Fariz22/musiclab/pkg/db/postgres"
 	"github.com/22Fariz22/musiclab/pkg/logger"
-	"github.com/22Fariz22/musiclab/pkg/utils"
 )
 
 func main(){
 	log.Println("Starting api server")
 
-	configPath := utils.GetConfigPath(os.Getenv("config"))
-
-	cfgFile, err := config.LoadConfig(configPath)
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("LoadConfig: %v", err)
-	}
-
-	cfg, err := config.ParseConfig(cfgFile)
-	if err != nil {
-		log.Fatalf("ParseConfig: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	appLogger := logger.NewApiLogger(cfg)

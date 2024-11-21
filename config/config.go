@@ -1,11 +1,12 @@
 package config
 
 import (
-	"errors"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
-	"github.com/spf13/viper"
+	"github.com/joho/godotenv"
 )
 
 // App config struct
@@ -20,7 +21,6 @@ type ServerConfig struct {
 	AppVersion        string
 	Port              string
 	Mode              string
-	JwtSecretKey      string
 	ReadTimeout       time.Duration
 	WriteTimeout      time.Duration
 	CtxDefaultTimeout time.Duration
@@ -47,32 +47,63 @@ type PostgresConfig struct {
 	PgDriver           string
 }
 
-// Load config file from given path
-func LoadConfig(filename string) (*viper.Viper, error) {
-	v := viper.New()
-
-	v.SetConfigName(filename)
-	v.AddConfigPath(".")
-	v.AutomaticEnv()
-	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			return nil, errors.New("config file not found")
-		}
-		return nil, err
+// LoadConfig reads environment variables into a Config struct
+func LoadConfig() (*Config, error) {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found. Falling back to environment variables.")
 	}
-	
-	return v, nil
+
+	return &Config{
+		Server: ServerConfig{
+			AppVersion:        getEnv("APP_VERSION", "1.0.0"),
+			Port:              getEnv("SERVER_PORT", ":8080"),
+			Mode:              getEnv("MODE", "Development"),
+			ReadTimeout:       getEnvAsDuration("READ_TIMEOUT", 10*time.Second),
+			WriteTimeout:      getEnvAsDuration("WRITE_TIMEOUT", 10*time.Second),
+			CtxDefaultTimeout: getEnvAsDuration("CTX_DEFAULT_TIMEOUT", 12*time.Second),
+			Debug:             getEnvAsBool("DEBUG", false),
+		},
+		Logger: Logger{
+			Development:       getEnvAsBool("LOGGER_DEVELOPMENT", true),
+			DisableCaller:     getEnvAsBool("LOGGER_DISABLE_CALLER", false),
+			DisableStacktrace: getEnvAsBool("LOGGER_DISABLE_STACKTRACE", false),
+			Encoding:          getEnv("LOGGER_ENCODING", "console"),
+			Level:             getEnv("LOGGER_LEVEL", "info"),
+		},
+		Postgres: PostgresConfig{
+			PostgresqlHost:     getEnv("POSTGRES_HOST", "localhost"),
+			PostgresqlPort:     getEnv("POSTGRES_PORT", "5432"),
+			PostgresqlUser:     getEnv("POSTGRES_USER", "postgres"),
+			PostgresqlPassword: getEnv("POSTGRES_PASSWORD", "postgres"),
+			PostgresqlDbname:   getEnv("POSTGRES_DBNAME", "music_db"),
+			PostgresqlSSLMode:  getEnvAsBool("POSTGRES_SSLMODE", false),
+			PgDriver:           getEnv("POSTGRES_DRIVER", "pgx"),
+		},
+	}, nil
 }
 
-// Parse config file
-func ParseConfig(v *viper.Viper) (*Config, error) {
-	var c Config
+// Helper functions to parse environment variables
 
-	err := v.Unmarshal(&c)
-	if err != nil {
-		log.Printf("unable to decode into struct, %v", err)
-		return nil, err
+func getEnv(key, defaultValue string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
 	}
+	return defaultValue
+}
 
-	return &c, nil
+func getEnvAsBool(key string, defaultValue bool) bool {
+	valStr := getEnv(key, "")
+	if val, err := strconv.ParseBool(valStr); err == nil {
+		return val
+	}
+	return defaultValue
+}
+
+func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
+	valStr := getEnv(key, "")
+	if val, err := time.ParseDuration(valStr); err == nil {
+		return val
+	}
+	return defaultValue
 }
