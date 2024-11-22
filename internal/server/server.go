@@ -21,10 +21,10 @@ const (
 
 // Server struct
 type Server struct {
-	echo        *echo.Echo
-	cfg         *config.Config
-	db          *sqlx.DB
-	logger      logger.Logger
+	echo   *echo.Echo
+	cfg    *config.Config
+	db     *sqlx.DB
+	logger logger.Logger
 }
 
 // NewServer New Server constructor
