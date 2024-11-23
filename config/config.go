@@ -14,6 +14,7 @@ type Config struct {
 	Server   ServerConfig
 	Postgres PostgresConfig
 	Logger   Logger
+	Redis    RedisConfig
 }
 
 // Server config struct
@@ -45,6 +46,16 @@ type PostgresConfig struct {
 	PostgresqlDbname   string
 	PostgresqlSSLMode  bool
 	PgDriver           string
+}
+
+type RedisConfig struct {
+	Addr         string
+	Password     string
+	DB           int
+	DefaultDB    int
+	MinIdleConns int
+	PoolSize     int
+	PoolTimeout  int
 }
 
 // LoadConfig reads environment variables into a Config struct
@@ -80,6 +91,15 @@ func LoadConfig() (*Config, error) {
 			PostgresqlSSLMode:  getEnvAsBool("POSTGRES_SSLMODE", false),
 			PgDriver:           getEnv("POSTGRES_DRIVER", "pgx"),
 		},
+		Redis: RedisConfig{
+			Addr:         getEnv("REDIS_ADDR", "redis:6379"),
+			Password:     getEnv("REDIS_PASSWORD", ""),
+			DB:           getEnvAsInt("REDIS_DB", 0),
+			DefaultDB:    getEnvAsInt("REDIS_DEFAULT_DB", 0),
+			MinIdleConns: getEnvAsInt("REDIS_MIN_IDLE_CONNS", 10),
+			PoolSize:     getEnvAsInt("REDIS_POOL_SIZE", 500),
+			PoolTimeout:  getEnvAsInt("REDIS_POOL_TIMEOUT", 30),
+		},
 	}, nil
 }
 
@@ -103,6 +123,14 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
 	valStr := getEnv(key, "")
 	if val, err := time.ParseDuration(valStr); err == nil {
+		return val
+	}
+	return defaultValue
+}
+
+func getEnvAsInt(key string, defaultValue int) int {
+	valStr := getEnv(key, "")
+	if val, err := strconv.Atoi(valStr); err == nil {
 		return val
 	}
 	return defaultValue
