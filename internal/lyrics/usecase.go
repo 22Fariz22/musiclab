@@ -1,10 +1,12 @@
 package lyrics
 
+import "context"
+
 type UseCase interface {
 	// Search()
-	// GetLyrics()
-	// DeleteSong()
-	// UpdateSong()
-	// CreateSong()
+	// GetSongVerses()
+	DeleteSongByGroupAndTrack(ctx context.Context, groupName string, trackName string) error
+	// UpdateTrack()
+	// CreateTrack()
 	Ping() error
 }

@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"context"
+
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/internal/lyrics"
 	"github.com/22Fariz22/musiclab/pkg/logger"
@@ -19,6 +21,7 @@ func NewLyricsUseCase(cfg *config.Config, lyricsRepo lyrics.Repository, logger l
 // Ping check
 func (u lyricsUseCase) Ping() error {
 	u.logger.Debug("Call UseCase Ping()")
+
 	err := u.lyricsRepo.Ping()
 	if err != nil {
 		u.logger.Debug("error in lyricsUseCase Ping()")
@@ -27,4 +30,9 @@ func (u lyricsUseCase) Ping() error {
 
 	u.logger.Debug("Pong in lyricsUseCase Ping()")
 	return nil
+}
+
+func (u lyricsUseCase) DeleteSongByGroupAndTrack(ctx context.Context, groupName string, trackName string) error {
+	u.logger.Debugf("in usecase DeleteSongByGroupAndTrack. Deleting song. Group: %s, Track: %s", groupName, trackName)
+	return u.lyricsRepo.DeleteSongByGroupAndTrack(ctx, groupName, trackName)
 }

@@ -21,6 +21,7 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 
 	// Init repositories
 	lyricsRepo := lyricsRepository.NewLyricsRepository(s.db, s.logger)
+	//lyricsRedisRepo
 
 	// Init useCases
 	lyricsUC := lyricsUseCase.NewLyricsUseCase(s.cfg, lyricsRepo, s.logger)
