@@ -7,4 +7,5 @@ import (
 type Handlers interface {
 	Ping() echo.HandlerFunc
 	DeleteSongByGroupAndTrack() echo.HandlerFunc
+	UpdateTrackByID() echo.HandlerFunc
 }

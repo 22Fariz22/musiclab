@@ -7,6 +7,7 @@ import (
 
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/internal/lyrics"
+	"github.com/22Fariz22/musiclab/internal/models"
 	"github.com/22Fariz22/musiclab/pkg/logger"
 	"github.com/labstack/echo/v4"
 )
@@ -58,5 +59,37 @@ func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 
 		h.logger.Debugf("http.StatusOK, Track %s is deleted", trackName)
 		return c.JSON(http.StatusOK, "Track is deleted")
+	}
+}
+
+func (h lyricsHandlers)UpdateTrackByID()echo.HandlerFunc{
+	return func(c echo.Context) error {
+	var updateData models.UpdateTrackRequest
+
+	if err := c.Bind(&updateData); err != nil {
+		h.logger.Debug("in handler UpdateTrackByID() Bind() return error: ", err)
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "invalid JSON format",
+		})
+	}
+
+	err := h.lyricsUsecase.UpdateTrackByID(c.Request().Context(), updateData)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": "song not found",
+			})
+		}
+		h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to update song",
+		})
+	}
+
+	h.logger.Debug("in handler UpdateTrackByID() return statusOk")
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "track updated successfully",
+	})
 	}
 }

@@ -9,4 +9,5 @@ import (
 func MapLyricsRoutes(lyricsGroup *echo.Group, h lyrics.Handlers) {
 	lyricsGroup.GET("/ping", h.Ping())
 	lyricsGroup.DELETE("/delete", h.DeleteSongByGroupAndTrack())
+	lyricsGroup.PUT("/update",h.UpdateTrackByID())
 }
