@@ -21,7 +21,7 @@ type Song struct {
 	GroupName   string `gorm:"type:varchar(255);not null"`
 	SongName    string `gorm:"type:varchar(255);not null"`
 	ReleaseDate *time.Time
-	Text        []string `gorm:"type:text[]"`
+	Text        string    `gorm:"type:text"` 
 	Link        *string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
