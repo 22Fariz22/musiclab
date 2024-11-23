@@ -15,6 +15,16 @@ type SongDetail struct {
 	Link        string `json:"link"`
 }
 
+// UpdateTrackRequest обновление информации
+type UpdateTrackRequest struct {
+	ID          uint   	`json:"id" validate:"required"`
+	GroupName   string  `json:"group" validate:"required"`       
+	SongName    string  `json:"song" validate:"required"`         
+	ReleaseDate *string `json:"release_date,omitempty"`          
+	Text        *string `json:"text,omitempty"`                  
+	Link        *string `json:"link,omitempty"`                 
+}
+
 // Song модель базы данных
 type Song struct {
 	ID          uint   `gorm:"primaryKey"`
