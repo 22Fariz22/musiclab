@@ -11,21 +11,23 @@ import (
 	"github.com/22Fariz22/musiclab/internal/models"
 	"github.com/22Fariz22/musiclab/pkg/apilyrics"
 	"github.com/22Fariz22/musiclab/pkg/logger"
+	"github.com/redis/go-redis/v9"
 )
 
 type lyricsUseCase struct {
-	cfg        *config.Config
-	lyricsRepo lyrics.Repository
-	logger     logger.Logger
+	cfg         *config.Config
+	lyricsRepo  lyrics.Repository
+	redisClient *redis.Client
+	logger      logger.Logger
 }
 
-func NewLyricsUseCase(cfg *config.Config, lyricsRepo lyrics.Repository, logger logger.Logger) lyrics.UseCase {
-	return &lyricsUseCase{cfg: cfg, lyricsRepo: lyricsRepo, logger: logger}
+func NewLyricsUseCase(cfg *config.Config, lyricsRepo lyrics.Repository, redisClient *redis.Client, logger logger.Logger) lyrics.UseCase {
+	return &lyricsUseCase{cfg: cfg, lyricsRepo: lyricsRepo, redisClient: redisClient, logger: logger}
 }
 
 // Ping check
 func (u lyricsUseCase) Ping() error {
-	u.logger.Debug("Call UseCase Ping()")
+	u.logger.Debug("Call UseCase Ping()\n")
 
 	err := u.lyricsRepo.Ping()
 	if err != nil {
@@ -38,21 +40,21 @@ func (u lyricsUseCase) Ping() error {
 }
 
 func (u lyricsUseCase) DeleteSongByGroupAndTrack(ctx context.Context, groupName string, trackName string) error {
-	u.logger.Debugf("in usecase DeleteSongByGroupAndTrack. Deleting song. Group: %s, Track: %s", groupName, trackName)
+	u.logger.Debugf("in usecase DeleteSongByGroupAndTrack. Deleting song. Group: %s, Track: %s\n", groupName, trackName)
 	return u.lyricsRepo.DeleteSongByGroupAndTrack(ctx, groupName, trackName)
 }
 
-func (u lyricsUseCase)UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error{
+func (u lyricsUseCase) UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error {
 	u.logger.Debugf("in usecase UpdateTrackByID() ID:%d", updateData)
 	return u.lyricsRepo.UpdateTrackByID(ctx, updateData)
 }
 
-func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest) error{
-	u.logger.Debug("in usecase CreateTrack()")
+func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest) error {
+	u.logger.Debug("in usecase CreateTrack()\n")
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	const maxRetries = 3         // Максимальное количество попыток
+	const maxRetries = 3               // Максимальное количество попыток
 	const retryDelay = 2 * time.Second // Задержка между попытками
 
 	var lyrics apilyrics.LyricsAPI
@@ -81,7 +83,7 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest)
 	}
 
 	//создаем данные для передачи обогащенной информации в репозиторий
-	songDetails:= models.SongDetail{}
+	songDetails := models.SongDetail{}
 	songDetails.Text = lyrics.Verses
 
 	//бесплатного или не требующего ключа сервиса,который выдает дату релиза и ютуб-ссылку, не нашел
@@ -101,15 +103,43 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest)
 	return nil
 }
 
+//GetSongVerseByPage 
 func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int) (string, error) {
-	// Получаем песню из репозитория
-	song, err := u.lyricsRepo.GetSongByID(ctx, id)
-	if err != nil {
-		return "", fmt.Errorf("failed to get song: %w", err)
+	u.logger.Debugf("in UC GetSongVerseByPage ID:%d, page:%d\n", id, page)
+
+	cacheKey := fmt.Sprintf("song:%d", id)
+
+	// Проверяем кэш
+	cachedSong, err := u.redisClient.Get(ctx, cacheKey).Result()
+	if err != nil && err != redis.Nil {
+		u.logger.Errorf("Error fetching from Redis: %v", err)
+		cachedSong = ""
 	}
 
+	var songText string
+	if cachedSong == "" {
+		u.logger.Debugf("Cache miss for key: %s. Fetching from database.", cacheKey)
+
+		// Если в кэше ничего нет, идём в базу данных
+		song, err := u.lyricsRepo.GetSongByID(ctx, id)
+		if err != nil {
+			u.logger.Debugf("error in uc u.lyricsRepo.GetSongByID():", err)
+			return "", fmt.Errorf("failed to get song from database: %w", err)
+		}
+
+		songText = song.Text
+
+		// Сохраняем песню в кэше
+		err = u.redisClient.Set(ctx, cacheKey, songText, 6*time.Hour).Err()
+		if err != nil {
+			u.logger.Errorf("Error caching song in Redis: %v", err)
+		}
+	} else {
+		u.logger.Debugf("Cache hit for key: %s", cacheKey)
+		songText = cachedSong
+	}
 	// Разделяем текст на куплеты
-	verses := prepareLyrics(song.Text)
+	verses := prepareLyrics(songText)
 
 	// Проверяем, существует ли куплет для указанной страницы
 	if page <= 0 || page > len(verses) {
@@ -120,9 +150,8 @@ func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int
 	return verses[page-1], nil
 }
 
-//prepareLyrics делим песню на куплеты
+// prepareLyrics делим песню на куплеты
 func prepareLyrics(lyrics string) []string {
 	lines := strings.Split(lyrics, "\\n")
 	return lines
 }
-
