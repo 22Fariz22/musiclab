@@ -2,10 +2,13 @@ package usecase
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/internal/lyrics"
 	"github.com/22Fariz22/musiclab/internal/models"
+	"github.com/22Fariz22/musiclab/pkg/apilyrics"
 	"github.com/22Fariz22/musiclab/pkg/logger"
 )
 
@@ -41,4 +44,58 @@ func (u lyricsUseCase) DeleteSongByGroupAndTrack(ctx context.Context, groupName 
 func (u lyricsUseCase)UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error{
 	u.logger.Debugf("in usecase UpdateTrackByID() ID:%d", updateData)
 	return u.lyricsRepo.UpdateTrackByID(ctx, updateData)
+}
+
+func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest) error{
+	u.logger.Debug("in usecase CreateTrack()")
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	const maxRetries = 3         // Максимальное количество попыток
+	const retryDelay = 2 * time.Second // Задержка между попытками
+
+	var lyrics apilyrics.LyricsAPI
+	var err error
+
+	// Логика повторных попыток
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		//обращаемся к апи который выдает текст песни
+		lyrics, err = apilyrics.FetchLyrics(ctx, song.Group, song.Song)
+		if err == nil {
+			// Успешный запрос — выходим из цикла
+			break
+		}
+
+		// Логируем ошибку и пытаемся повторить, если это временная ошибка
+		u.logger.Warnf("Attempt %d: failed to fetch lyrics: %v", attempt, err)
+
+		// Если это последняя попытка, возвращаем ошибку
+		if attempt == maxRetries {
+			u.logger.Errorf("All attempts to fetch lyrics failed")
+			return fmt.Errorf("failed to fetch lyrics after %d attempts: %w", maxRetries, err)
+		}
+
+		// Задержка перед следующей попыткой
+		time.Sleep(retryDelay)
+	}
+
+	//создаем данные для передачи обогащенной информации в репозиторий
+	songDetails:= models.SongDetail{}
+	songDetails.Text = lyrics.Verses
+
+	//бесплатного или не требующего ключа сервиса,который выдает дату релиза и ютуб-ссылку, не нашел
+	songDetails.ReleaseDate = "01.01.2001"
+	songDetails.Link = "https://www.youtube.com/watch?v=Xsp3_a-PMTw"
+
+	// Вывод текста песни в дебаг лог
+	u.logger.Debugf("Fetched lyrics successfully: %s", songDetails.Text)
+
+	err = u.lyricsRepo.CreateTrack(ctx, song, songDetails)
+	if err != nil {
+		u.logger.Errorf("Failed to save track in repository: %v", err)
+		return fmt.Errorf("failed to save track: %w", err)
+	}
+
+	u.logger.Debugf("In usecase in CreateTrack() successfully created: %+v", songDetails)
+	return nil
 }

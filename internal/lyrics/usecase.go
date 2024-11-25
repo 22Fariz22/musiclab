@@ -11,6 +11,6 @@ type UseCase interface {
 	// GetSongVerses()
 	DeleteSongByGroupAndTrack(ctx context.Context, groupName string, trackName string) error
 	UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error
-	// CreateTrack()
+	CreateTrack(ctx context.Context, song models.SongRequest) error
 	Ping() error
 }

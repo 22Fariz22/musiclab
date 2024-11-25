@@ -57,7 +57,7 @@ func (r lyricsRepo) DeleteSongByGroupAndTrack(ctx context.Context, groupName str
 }
 
 func (r lyricsRepo)UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error{
-	r.logger.Debugf("in repo UpdateTrackByID() updateData:%d", updateData)
+	r.logger.Debugf("in repo UpdateTrackByID() updateData:%+v\n", updateData)
 
 	query := `
 	UPDATE songs
@@ -70,7 +70,7 @@ func (r lyricsRepo)UpdateTrackByID(ctx context.Context, updateData models.Update
 		updated_at = NOW()
 		WHERE id = $6
 		`
-		
+
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
@@ -99,3 +99,30 @@ func (r lyricsRepo)UpdateTrackByID(ctx context.Context, updateData models.Update
 	r.logger.Debug("in repo UpdateTrackByID() return nil")
 	return nil
 }
+
+func (r lyricsRepo)CreateTrack(ctx context.Context, song models.SongRequest, songDetail models.SongDetail) error{
+	r.logger.Debugf("in repo CreateTrack() song:%+v, songDetail:%+v\n", song, songDetail)
+	
+	query := `
+		INSERT INTO songs (group_name, song_name, release_date, text, link, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+	`
+	_, err := r.db.ExecContext(
+		ctx,
+		query,
+		song.Group,             
+		song.Song,              
+		songDetail.ReleaseDate, 
+		songDetail.Text,        
+		songDetail.Link,      
+	)
+
+	if err != nil {
+		r.logger.Debugf("error in repo CreateTrack() in r.db.ExecContext: ",err)
+		return errors.Wrap(err, "lyricsRepo.CreateTrack.ExecContext")
+	}
+	
+	r.logger.Debug("error in repo CreateTrack() return nil")
+	return nil
+}
+

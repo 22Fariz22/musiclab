@@ -9,6 +9,7 @@ import (
 	"github.com/22Fariz22/musiclab/internal/lyrics"
 	"github.com/22Fariz22/musiclab/internal/models"
 	"github.com/22Fariz22/musiclab/pkg/logger"
+	"github.com/22Fariz22/musiclab/pkg/utils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -25,6 +26,7 @@ func NewLyricsHandler(cfg *config.Config, lyricsUsecase lyrics.UseCase, logger l
 func (h lyricsHandlers) Ping() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debug("Call Handler Ping()")
+
 		err := h.lyricsUsecase.Ping()
 		if err != nil {
 			h.logger.Debug("error in handlers Ping()")
@@ -36,6 +38,8 @@ func (h lyricsHandlers) Ping() echo.HandlerFunc {
 
 func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		h.logger.Debugf("in handler DeleteSongByGroupAndTrack")
+		
 		ctx := c.Request().Context()
 
 		groupName := c.QueryParam("group")
@@ -64,7 +68,11 @@ func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 
 func (h lyricsHandlers)UpdateTrackByID()echo.HandlerFunc{
 	return func(c echo.Context) error {
+	h.logger.Debugf("in handler UpdateTrackByID")
+
 	var updateData models.UpdateTrackRequest
+
+	ctx:=c.Request().Context()
 
 	if err := c.Bind(&updateData); err != nil {
 		h.logger.Debug("in handler UpdateTrackByID() Bind() return error: ", err)
@@ -73,7 +81,7 @@ func (h lyricsHandlers)UpdateTrackByID()echo.HandlerFunc{
 		})
 	}
 
-	err := h.lyricsUsecase.UpdateTrackByID(c.Request().Context(), updateData)
+	err := h.lyricsUsecase.UpdateTrackByID(ctx, updateData)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
@@ -90,6 +98,40 @@ func (h lyricsHandlers)UpdateTrackByID()echo.HandlerFunc{
 	h.logger.Debug("in handler UpdateTrackByID() return statusOk")
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "track updated successfully",
+	})
+	}
+}
+
+func (h lyricsHandlers)CreateTrack()echo.HandlerFunc{
+	return func(c echo.Context) error {
+		h.logger.Debugf("in handler CreateTrack")
+		
+		ctx:=c.Request().Context()
+
+		var songRequest models.SongRequest
+
+		if err := c.Bind(&songRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid JSON for SongRequest",
+		})
+	}
+
+	if err := utils.ValidateStruct(ctx, &songRequest); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "Invalid JSON fields",
+				"details": err.Error(), 
+			})
+		}
+
+	err := h.lyricsUsecase.CreateTrack(ctx, songRequest)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "Failed to create track",
+			})
+		}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "Track created successfully",
 	})
 	}
 }
