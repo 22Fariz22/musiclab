@@ -2,15 +2,17 @@ package migrate
 
 import (
 	"github.com/22Fariz22/musiclab/internal/models"
+	"github.com/22Fariz22/musiclab/pkg/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 // Migrate applies database migrations
-func Migrate(dsn string) error {
+func Migrate(logger logger.Logger, dsn string) error {
 	// Инициализация GORM с использованием только для миграций
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
+		logger.Debugf("Error in pkg/db/migrate/migrate.go")
 		return err
 	}
 

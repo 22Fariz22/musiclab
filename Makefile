@@ -9,6 +9,6 @@ dev:
 	echo "Starting docker environment"
 	docker-compose -f docker-compose.dev.yml up --build
 
-down-dev:
+dev-down:
 	docker stop $(FILES)
 	docker rm $(FILES)
