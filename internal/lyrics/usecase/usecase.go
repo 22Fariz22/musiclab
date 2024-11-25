@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/22Fariz22/musiclab/config"
@@ -99,3 +100,29 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest)
 	u.logger.Debugf("In usecase in CreateTrack() successfully created: %+v", songDetails)
 	return nil
 }
+
+func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int) (string, error) {
+	// Получаем песню из репозитория
+	song, err := u.lyricsRepo.GetSongByID(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("failed to get song: %w", err)
+	}
+
+	// Разделяем текст на куплеты
+	verses := prepareLyrics(song.Text)
+
+	// Проверяем, существует ли куплет для указанной страницы
+	if page <= 0 || page > len(verses) {
+		return "", fmt.Errorf("no verse available for page %d", page)
+	}
+
+	// Возвращаем куплет по индексу (page - 1, так как индексация с 0)
+	return verses[page-1], nil
+}
+
+//prepareLyrics делим песню на куплеты
+func prepareLyrics(lyrics string) []string {
+	lines := strings.Split(lyrics, "\\n")
+	return lines
+}
+

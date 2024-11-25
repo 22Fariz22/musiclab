@@ -9,4 +9,5 @@ type Handlers interface {
 	DeleteSongByGroupAndTrack() echo.HandlerFunc
 	UpdateTrackByID() echo.HandlerFunc
 	CreateTrack() echo.HandlerFunc
+	GetSongVerseByPage() echo.HandlerFunc
 }

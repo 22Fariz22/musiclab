@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/22Fariz22/musiclab/internal/lyrics"
 	"github.com/22Fariz22/musiclab/internal/models"
@@ -126,3 +127,15 @@ func (r lyricsRepo)CreateTrack(ctx context.Context, song models.SongRequest, son
 	return nil
 }
 
+//GetSongByID получаем песню по ID
+func (r lyricsRepo) GetSongByID(ctx context.Context, id uint) (models.Song, error) {
+	var song models.Song
+	query := `SELECT text FROM songs WHERE id = $1`
+
+	err := r.db.GetContext(ctx, &song, query, id)
+	if err != nil {
+		return models.Song{}, fmt.Errorf("failed to fetch song: %w", err)
+	}
+
+	return song, nil
+}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/internal/lyrics"
@@ -133,5 +134,44 @@ func (h lyricsHandlers)CreateTrack()echo.HandlerFunc{
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Track created successfully",
 	})
+	}
+}
+
+func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		h.logger.Debug("In handler GetSongVerseByPage")
+
+		ctx := c.Request().Context()
+
+		// Получаем ID песни из параметра маршрута
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil || id <= 0 {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "Invalid song ID",
+			})
+		}
+
+		// Получаем номер страницы из query-параметров
+		page, err := strconv.Atoi(c.QueryParam("page"))
+		if err != nil || page <= 0 {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "Invalid page number",
+			})
+		}
+
+		// Вызываем usecase для получения куплета
+		verse, err := h.lyricsUsecase.GetSongVerseByPage(ctx, uint(id), page) 
+		if err != nil {
+			h.logger.Errorf("Error fetching verse: %v", err)
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": err.Error(),
+			})
+		}
+
+		// Возвращаем куплет клиенту
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"page":  page,
+			"verse": verse,
+		})
 	}
 }
