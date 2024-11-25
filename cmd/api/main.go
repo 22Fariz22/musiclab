@@ -62,7 +62,7 @@ func main() {
 	defer redisClient.Close()
 	appLogger.Info("Redis connected")
 
-	s := server.NewServer(cfg, psqlDB, appLogger)
+	s := server.NewServer(cfg, psqlDB, redisClient, appLogger)
 	if err = s.Run(); err != nil {
 		appLogger.Fatalf("Error in main NewServer(): ", err)
 	}
