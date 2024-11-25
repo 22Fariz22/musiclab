@@ -19,4 +19,5 @@
 main
 .env
 .idea
+.vscode
 pgdata
