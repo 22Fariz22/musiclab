@@ -10,6 +10,7 @@ import (
 
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/pkg/logger"
+	"github.com/redis/go-redis/v9"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 )
@@ -24,12 +25,13 @@ type Server struct {
 	echo   *echo.Echo
 	cfg    *config.Config
 	db     *sqlx.DB
+	redisClient *redis.Client
 	logger logger.Logger
 }
 
 // NewServer New Server constructor
-func NewServer(cfg *config.Config, db *sqlx.DB, logger logger.Logger) *Server {
-	return &Server{echo: echo.New(), cfg: cfg, db: db, logger: logger}
+func NewServer(cfg *config.Config, db *sqlx.DB, redisClient *redis.Client,  logger logger.Logger) *Server {
+	return &Server{echo: echo.New(), cfg: cfg, db: db, redisClient: redisClient, logger: logger}
 }
 
 func (s *Server) Run() error {
