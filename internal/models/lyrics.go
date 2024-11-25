@@ -4,15 +4,15 @@ import "time"
 
 // SongRequest для добавления песни
 type SongRequest struct {
-	Group string `json:"group" validate:"required"`
-	Song  string `json:"song" validate:"required"`
+	Group string `json:"group" validate:"required,min=1"`
+	Song  string `json:"song" validate:"required,min=1"`
 }
 
 // SongDetail для ответа
 type SongDetail struct {
-	ReleaseDate string `json:"releaseDate"`
-	Text        string `json:"text"`
-	Link        string `json:"link"`
+	ReleaseDate string `json:"releaseDate" validate:"required"`
+	Text        string `json:"text" validate:"required"`
+	Link        string `json:"link" validate:"required"`
 }
 
 // UpdateTrackRequest обновление информации
