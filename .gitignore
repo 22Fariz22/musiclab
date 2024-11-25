@@ -17,7 +17,7 @@
 
 # Enviroment files
 main
-.env
+# .env
 .idea
 .vscode
 pgdata
