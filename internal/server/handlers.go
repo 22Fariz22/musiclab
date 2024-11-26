@@ -9,6 +9,8 @@ import (
 	lyricsUseCase "github.com/22Fariz22/musiclab/internal/lyrics/usecase"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
+		_ "github.com/22Fariz22/musiclab/docs"
 )
 
 // Map Server Handlers
@@ -28,7 +30,8 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 	// Init handlers
 	lyricsHandler := lyricsHTTP.NewLyricsHandler(s.cfg, lyricsUC, s.logger)
 
-	//TODO: add swagger
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	e.Static("/swagger", "./docs")
 
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
 		StackSize:         1 << 10, // 1 KB
