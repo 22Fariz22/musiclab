@@ -1,0 +1,272 @@
+basePath: /api/v1
+definitions:
+  models.SongRequest:
+    properties:
+      group:
+        minLength: 1
+        type: string
+      song:
+        minLength: 1
+        type: string
+    required:
+    - group
+    - song
+    type: object
+  models.UpdateTrackRequest:
+    properties:
+      group:
+        type: string
+      id:
+        type: integer
+      link:
+        type: string
+      release_date:
+        type: string
+      song:
+        type: string
+      text:
+        type: string
+    required:
+    - group
+    - id
+    - song
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: fariz08@gmail.com
+    name: Fariz Rustamov
+    url: https://github.com/22fariz22
+  description: Это API для управления музыкальной библиотекой.
+  title: MusicLab API
+  version: "1.0"
+paths:
+  /lyrics/create:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новую песню в библиотеку
+      parameters:
+      - description: Данные песни
+        in: body
+        name: song
+        required: true
+        schema:
+          $ref: '#/definitions/models.SongRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Track created successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid JSON fields
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to create track
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать новую песню
+      tags:
+      - Lyrics
+  /lyrics/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет песню из библиотеки по названию группы и трека
+      parameters:
+      - description: Название группы
+        in: query
+        name: group
+        required: true
+        type: string
+      - description: Название трека
+        in: query
+        name: track
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Track is deleted
+          schema:
+            type: string
+        "400":
+          description: Group and song name are required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Track not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to delete song
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить песню
+      tags:
+      - Lyrics
+  /lyrics/library:
+    get:
+      description: Получить список песен с фильтрацией по полям и пагинацией
+      parameters:
+      - description: Название группы
+        in: query
+        name: group
+        type: string
+      - description: Название песни
+        in: query
+        name: song
+        type: string
+      - description: Дата релиза
+        in: query
+        name: releaseDate
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество элементов на странице
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить библиотеку
+      tags:
+      - Lyrics
+  /lyrics/ping:
+    get:
+      consumes:
+      - application/json
+      description: Проверяет доступность базы данных, возвращает "pong"
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: pong
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Проверка доступности базы данных
+      tags:
+      - Health
+  /lyrics/update:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные песни по идентификатору
+      parameters:
+      - description: Данные для обновления песни
+        in: body
+        name: song
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateTrackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Track updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid JSON format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Song not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to update song
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Обновить данные песни
+      tags:
+      - Lyrics
+  /lyrics/verses/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает конкретный куплет песни по идентификатору песни и номеру
+        страницы
+      parameters:
+      - description: ID песни
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Номер страницы (куплета)
+        in: query
+        name: page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить конкретный куплет песни
+      tags:
+      - Lyrics
+swagger: "2.0"
