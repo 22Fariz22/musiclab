@@ -10,8 +10,18 @@ import (
 	"github.com/22Fariz22/musiclab/pkg/db/postgres"
 	"github.com/22Fariz22/musiclab/pkg/db/redis"
 	"github.com/22Fariz22/musiclab/pkg/logger"
+	 _ "github.com/22Fariz22/musiclab/docs"
+
 )
 
+// @title MusicLab API
+// @version 1.0
+// @description Это API для управления музыкальной библиотекой.
+// @contact.name Fariz Rustamov
+// @contact.url https://github.com/22fariz22
+// @contact.email fariz08@gmail.com
+// @host localhost:8080
+// @BasePath /api/v1
 func main() {
 	log.Println("Starting api server")
 

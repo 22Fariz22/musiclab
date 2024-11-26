@@ -24,6 +24,15 @@ func NewLyricsHandler(cfg *config.Config, lyricsUsecase lyrics.UseCase, logger l
 	return &lyricsHandlers{cfg: cfg, lyricsUsecase: lyricsUsecase, logger: logger}
 }
 
+// Ping godoc
+// @Summary Проверка доступности базы данных
+// @Description Проверяет доступность базы данных, возвращает "pong"
+// @Tags Health
+// @Accept json
+// @Produce json
+// @Success 200 {string} string "pong"
+// @Failure 500 {object} map[string]string "Internal Server Error"
+// @Router /lyrics/ping [get]
 func (h lyricsHandlers) Ping() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debug("Call Handler Ping()")
@@ -37,6 +46,19 @@ func (h lyricsHandlers) Ping() echo.HandlerFunc {
 	}
 }
 
+// DeleteSongByGroupAndTrack godoc
+// @Summary Удалить песню
+// @Description Удаляет песню из библиотеки по названию группы и трека
+// @Tags Lyrics
+// @Accept json
+// @Produce json
+// @Param group query string true "Название группы"
+// @Param track query string true "Название трека"
+// @Success 200 {string} string "Track is deleted"
+// @Failure 400 {object} map[string]string "Group and song name are required"
+// @Failure 404 {object} map[string]string "Track not found"
+// @Failure 500 {object} map[string]string "Failed to delete song"
+// @Router /lyrics/delete [delete]
 func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler DeleteSongByGroupAndTrack")
@@ -67,6 +89,18 @@ func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 	}
 }
 
+// UpdateTrackByID godoc
+// @Summary Обновить данные песни
+// @Description Обновляет данные песни по идентификатору
+// @Tags Lyrics
+// @Accept json
+// @Produce json
+// @Param song body models.UpdateTrackRequest true "Данные для обновления песни"
+// @Success 200 {object} map[string]string "Track updated successfully"
+// @Failure 400 {object} map[string]string "Invalid JSON format"
+// @Failure 404 {object} map[string]string "Song not found"
+// @Failure 500 {object} map[string]string "Failed to update song"
+// @Router /lyrics/update [put]
 func (h lyricsHandlers)UpdateTrackByID()echo.HandlerFunc{
 	return func(c echo.Context) error {
 	h.logger.Debugf("in handler UpdateTrackByID")
@@ -103,6 +137,17 @@ func (h lyricsHandlers)UpdateTrackByID()echo.HandlerFunc{
 	}
 }
 
+// CreateTrack godoc
+// @Summary Создать новую песню
+// @Description Добавляет новую песню в библиотеку
+// @Tags Lyrics
+// @Accept json
+// @Produce json
+// @Param song body models.SongRequest true "Данные песни"
+// @Success 201 {object} map[string]string "Track created successfully"
+// @Failure 400 {object} map[string]string "Invalid JSON fields"
+// @Failure 500 {object} map[string]string "Failed to create track"
+// @Router /lyrics/create [post]
 func (h lyricsHandlers)CreateTrack()echo.HandlerFunc{
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler CreateTrack")
@@ -137,6 +182,18 @@ func (h lyricsHandlers)CreateTrack()echo.HandlerFunc{
 	}
 }
 
+// GetSongVerseByPage godoc
+// @Summary Получить конкретный куплет песни
+// @Description Возвращает конкретный куплет песни по идентификатору песни и номеру страницы
+// @Tags Lyrics
+// @Accept json
+// @Produce json
+// @Param id path int true "ID песни"
+// @Param page query int true "Номер страницы (куплета)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /lyrics/verses/{id} [get]
 func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debug("In handler GetSongVerseByPage")
@@ -176,6 +233,19 @@ func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
 	}
 }
 
+// GetLibrary godoc
+// @Summary      Получить библиотеку
+// @Description  Получить список песен с фильтрацией по полям и пагинацией
+// @Tags         Lyrics
+// @Param        group        query    string  false  "Название группы"
+// @Param        song         query    string  false  "Название песни"
+// @Param        releaseDate  query    string  false  "Дата релиза"
+// @Param        page         query    int     false  "Номер страницы"
+// @Param        limit        query    int     false  "Количество элементов на странице"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /lyrics/library [get]
 func (h lyricsHandlers) GetLibrary() echo.HandlerFunc {
   return func(c echo.Context) error {
     ctx := c.Request().Context()
