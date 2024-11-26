@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/22Fariz22/musiclab/internal/lyrics"
 	"github.com/22Fariz22/musiclab/internal/models"
@@ -138,4 +140,46 @@ func (r lyricsRepo) GetSongByID(ctx context.Context, id uint) (models.Song, erro
 	}
 
 	return song, nil
+}
+
+func (r lyricsRepo) GetLibrary(ctx context.Context, group, song, releaseDate string, offset, limit int) ([]models.Song, int, error) {
+    var songs []models.Song
+    var total int
+
+    baseQuery := `SELECT id, group_name, song_name, text, release_date, link FROM songs`
+    baseCountQuery := `SELECT COUNT(*) FROM songs`
+    conditions := []string{}
+    args := []interface{}{}
+
+    if group != "" {
+        conditions = append(conditions, "group_name ILIKE $"+strconv.Itoa(len(args)+1))
+        args = append(args, "%"+group+"%")
+    }
+    if song != "" {
+        conditions = append(conditions, "song_name ILIKE $"+strconv.Itoa(len(args)+1))
+        args = append(args, "%"+song+"%")
+    }
+    if releaseDate != "" {
+        conditions = append(conditions, "release_date = $"+strconv.Itoa(len(args)+1))
+        args = append(args, releaseDate)
+    }
+
+    if len(conditions) > 0 {
+        conditionString := " WHERE " + strings.Join(conditions, " AND ")
+        baseQuery += conditionString
+        baseCountQuery += conditionString
+    }
+
+    baseQuery += " ORDER BY id LIMIT $" + strconv.Itoa(len(args)+1) + " OFFSET $" + strconv.Itoa(len(args)+2)
+    args = append(args, limit, offset)
+
+    if err := r.db.SelectContext(ctx, &songs, baseQuery, args...); err != nil {
+        return nil, 0, fmt.Errorf("failed to fetch songs: %w", err)
+    }
+
+    if err := r.db.GetContext(ctx, &total, baseCountQuery, args[:len(args)-2]...); err != nil {
+        return nil, 0, fmt.Errorf("failed to fetch total count: %w", err)
+    }
+
+    return songs, total, nil
 }

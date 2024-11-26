@@ -10,4 +10,5 @@ type Handlers interface {
 	UpdateTrackByID() echo.HandlerFunc
 	CreateTrack() echo.HandlerFunc
 	GetSongVerseByPage() echo.HandlerFunc
+	GetLibrary() echo.HandlerFunc
 }

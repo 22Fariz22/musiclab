@@ -175,3 +175,38 @@ func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
 		})
 	}
 }
+
+func (h lyricsHandlers) GetLibrary() echo.HandlerFunc {
+  return func(c echo.Context) error {
+    ctx := c.Request().Context()
+
+		group := c.QueryParam("group")
+		song := c.QueryParam("song")
+		releaseDate := c.QueryParam("release_date")
+
+		page, err := strconv.Atoi(c.QueryParam("page"))
+		if err != nil || page <= 0 {
+			page = 1 
+		}
+
+		limit, err := strconv.Atoi(c.QueryParam("limit"))
+		if err != nil || limit <= 0 {
+			limit = 10 
+		}
+
+		songs, total, err := h.lyricsUsecase.GetLibrary(ctx, group, song, releaseDate, page, limit)
+		if err != nil {
+			h.logger.Errorf("Error in GetLibrary: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "Failed to fetch library",
+			})
+		}
+
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+			"data":  songs,
+		})
+    }
+}

@@ -155,3 +155,17 @@ func prepareLyrics(lyrics string) []string {
 	lines := strings.Split(lyrics, "\\n")
 	return lines
 }
+
+func (u lyricsUseCase) GetLibrary(ctx context.Context, group, song, releaseDate string, page, limit int) ([]models.Song, int, error) {
+	u.logger.Debugf("Fetching library with filters: group=%s, song=%s, releaseDate=%s, page=%d, limit=%d", group, song, releaseDate, page, limit)
+
+	offset := (page - 1) * limit
+
+	songs, total, err := u.lyricsRepo.GetLibrary(ctx, group, song, releaseDate, offset, limit)
+	if err != nil {
+		u.logger.Errorf("Error fetching library from repository: %v", err)
+		return nil, 0, err
+	}
+
+	return songs, total, nil
+}
