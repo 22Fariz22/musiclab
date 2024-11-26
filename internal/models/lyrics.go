@@ -27,12 +27,12 @@ type UpdateTrackRequest struct {
 
 // Song модель базы данных
 type Song struct {
-	ID          uint   `gorm:"primaryKey"`
-	GroupName   string `gorm:"type:varchar(255);not null"`
-	SongName    string `gorm:"type:varchar(255);not null"`
-	ReleaseDate *time.Time
-	Text        string    `gorm:"type:text"` 
-	Link        *string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          uint       `gorm:"primaryKey" db:"id"`
+	GroupName   string     `gorm:"type:varchar(255);not null" db:"group_name"`
+	SongName    string     `gorm:"type:varchar(255);not null" db:"song_name"`
+	ReleaseDate *time.Time `db:"release_date"`
+	Text        string     `gorm:"type:text" db:"text"`
+	Link        *string    `db:"link"`
+	CreatedAt   time.Time  `db:"created_at"`
+	UpdatedAt   time.Time  `db:"updated_at"`
 }
