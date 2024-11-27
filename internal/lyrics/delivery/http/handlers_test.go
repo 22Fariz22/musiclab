@@ -508,16 +508,3 @@ func toJSON(data interface{}) string {
 	bytes, _ := json.Marshal(data)
 	return string(bytes)
 }
-
-func simplifySongs(songs []models.Song) []map[string]interface{} {
-	var simplified []map[string]interface{}
-	for _, song := range songs {
-		simplified = append(simplified, map[string]interface{}{
-			"ID":        song.ID,
-			"GroupName": song.GroupName,
-			"SongName":  song.SongName,
-			"Text":      song.Text,
-		})
-	}
-	return simplified
-}
