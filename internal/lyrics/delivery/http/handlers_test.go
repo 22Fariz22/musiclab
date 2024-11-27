@@ -44,7 +44,6 @@ func TestPingHandler(t *testing.T) {
 	mockUseCase.AssertExpectations(t)
 }
 
-
 func TestDeleteSongByGroupAndTrack(t *testing.T) {
 	e := echo.New()
 
