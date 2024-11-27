@@ -1,4 +1,4 @@
-.PHONY: migrate migrate_down migrate_up migrate_version docker prod local swaggo test up down
+.PHONY: migrate migrate_down migrate_up migrate_version docker prod local swaggo test up down gen
 
 # ==============================================================================
 # Docker compose commands
@@ -20,3 +20,12 @@ down:
 swaggo:
 	echo "Starting swagger generating"
 	swag init -g **/**/*.go
+
+gen:
+	echo "Starting generate mock"
+	go generate ./...
+
+cover:
+	echo "Create html file with cover data"
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out
