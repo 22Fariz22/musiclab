@@ -11,6 +11,8 @@
 
 - **[pgx](https://github.com/jackc/pgx)** - PostgreSQL driver and toolkit for Go
 
+- **[gorm](https://gorm.io/)** - ORM library for Golang
+
 - **[go-redis](https://github.com/redis/go-redis)** - Type-safe Redis client for Golang
 
 - **[zap](https://github.com/uber-go/zap)** - Logger
@@ -87,9 +89,7 @@ make up
 
 - **Метод**: `CreateTrack()`
 
-- Используется сторонний сервис для получения текста песни:
-
-[https://api.lyrics.ovh/v1/](https://api.lyrics.ovh/v1/)
+- Используется сторонний сервис для получения текста песни: [https://api.lyrics.ovh/v1/](https://api.lyrics.ovh/v1/)
 
 - Для заполнения полей ссылки и даты релиза используются фиктивные данные.
 
@@ -99,6 +99,4 @@ make up
 
 ### Swagger UI
 
-- Доступен по адресу:
-
-[https://localhost:8080/swagger/index.html](https://localhost:8080/swagger/index.html)
+- Доступен по адресу: [https://localhost:8080/swagger/index.html](https://localhost:8080/swagger/index.html)
