@@ -121,7 +121,7 @@ func (r lyricsRepo)CreateTrack(ctx context.Context, song models.SongRequest, son
 	)
 
 	if err != nil {
-		r.logger.Debugf("error in repo CreateTrack() in r.db.ExecContext: ",err)
+		r.logger.Errorf("error in repo CreateTrack() in r.db.ExecContext: %v", err)
 		return errors.Wrap(err, "lyricsRepo.CreateTrack.ExecContext")
 	}
 	

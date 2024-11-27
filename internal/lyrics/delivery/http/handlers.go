@@ -157,12 +157,14 @@ func (h lyricsHandlers)CreateTrack()echo.HandlerFunc{
 		var songRequest models.SongRequest
 
 		if err := c.Bind(&songRequest); err != nil {
+		h.logger.Errorf("Failed to Bind() in CreateTrack(): %v", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Invalid JSON for SongRequest",
 		})
 	}
 
 	if err := utils.ValidateStruct(ctx, &songRequest); err != nil {
+			h.logger.Errorf("Failed to ValidateStruct() in CreateTrack(): %v", err)
 			return c.JSON(http.StatusBadRequest, map[string]string{
 				"error": "Invalid JSON fields",
 				"details": err.Error(), 
@@ -171,6 +173,7 @@ func (h lyricsHandlers)CreateTrack()echo.HandlerFunc{
 
 	err := h.lyricsUsecase.CreateTrack(ctx, songRequest)
 		if err != nil {
+			h.logger.Errorf("Failed to create track: %v", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{
 				"error": "Failed to create track",
 			})
@@ -224,6 +227,15 @@ func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
 				"error": err.Error(),
 			})
 		}
+
+		// Проверяем на пустой текст для первой страницы
+		if page == 1 && verse == "" {
+					h.logger.Debugf("Page %d has an empty verse", page)
+					return c.JSON(http.StatusOK, map[string]interface{}{
+							"page":  page,
+							"verse": "",
+					})
+			}
 
 		// Возвращаем куплет клиенту
 		return c.JSON(http.StatusOK, map[string]interface{}{
