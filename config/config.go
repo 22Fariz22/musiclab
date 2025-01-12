@@ -73,10 +73,11 @@ type RedisConfig struct {
 }
 
 type APIConfig struct {
-	APILyric   string
-	MaxRetries int
-	RetryDelay time.Duration
-	YoutubeURL string
+	APILyric       string
+	MaxRetries     int
+	RetryDelay     time.Duration
+	YoutubeMainURL string
+	YoutubeURL     string
 }
 
 // LoadConfig reads environment variables into a Config struct
@@ -132,16 +133,16 @@ func LoadConfig() (*Config, error) {
 			PoolTimeout:  getEnvAsInt("REDIS_POOL_TIMEOUT", 30),
 		},
 		API: APIConfig{
-			APILyric:   getEnv("API_LYRIC", "https://api.lyrics.ovh/v1/%s/%s"),
-			MaxRetries: getEnvAsInt("MAX_RETRIES", 3),
-			RetryDelay: getEnvAsDuration("RETRY_DELAY", 1*time.Second),
-			YoutubeURL: getEnv("YOUTUBE_URL", "https://www.youtube.com/results?search_query=%s"),
+			APILyric:       getEnv("API_LYRIC", "https://api.lyrics.ovh/v1/%s/%s"),
+			MaxRetries:     getEnvAsInt("MAX_RETRIES", 3),
+			RetryDelay:     getEnvAsDuration("RETRY_DELAY", 1*time.Second),
+			YoutubeMainURL: getEnv("YOUTUBE_MAIN_URL", "https://www.youtube.com%s"),
+			YoutubeURL:     getEnv("YOUTUBE_URL", "https://www.youtube.com/results?search_query=%s"),
 		},
 	}, nil
 }
 
 // Helper functions to parse environment variables
-
 func getEnv(key, defaultValue string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value

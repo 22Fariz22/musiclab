@@ -9,7 +9,7 @@ import (
 	"regexp"
 )
 
-func GetYoutubeLink(URL, query string) string {
+func GetYoutubeLink(mainURL, URL, query string) string {
 	// Формируем URL для поискового запроса
 	searchURL := fmt.Sprintf(URL, url.QueryEscape(query))
 
@@ -35,7 +35,7 @@ func GetYoutubeLink(URL, query string) string {
 	if len(matches) > 0 {
 		// Берём первую уникальную ссылку
 		videoID := matches[0]
-		videoURL = fmt.Sprintf("https://www.youtube.com%s", videoID)
+		videoURL = fmt.Sprintf(mainURL, videoID)
 		fmt.Printf("First video: %s\n", videoURL)
 	} else {
 		fmt.Println("No video found")

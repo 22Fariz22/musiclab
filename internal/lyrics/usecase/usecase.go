@@ -87,7 +87,7 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest)
 	songDetails.Text = lyrics.Verses
 
 	//добавляем ссылку из ютуба
-	youtube := apilyrics.GetYoutubeLink(u.cfg.API.YoutubeURL, fmt.Sprintf("%s %s", song.Group, song.Song))
+	youtube := apilyrics.GetYoutubeLink(u.cfg.API.YoutubeMainURL, u.cfg.API.YoutubeURL, fmt.Sprintf("%s %s", song.Group, song.Song))
 	fmt.Println("youtubeURL ", youtube)
 	songDetails.Link = youtube
 	songDetails.ReleaseDate = time.Now()
