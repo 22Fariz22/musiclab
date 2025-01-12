@@ -59,7 +59,7 @@ func (r lyricsRepo) DeleteSongByGroupAndTrack(ctx context.Context, groupName str
 	return nil
 }
 
-func (r lyricsRepo)UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error{
+func (r lyricsRepo) UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error {
 	r.logger.Debugf("in repo UpdateTrackByID() updateData:%+v\n", updateData)
 
 	query := `
@@ -77,21 +77,21 @@ func (r lyricsRepo)UpdateTrackByID(ctx context.Context, updateData models.Update
 	result, err := r.db.ExecContext(
 		ctx,
 		query,
-		updateData.GroupName,  
-		updateData.SongName,   
-		updateData.ReleaseDate, 
-		updateData.Text,        
-		updateData.Link,        
-		updateData.ID,                    
+		updateData.GroupName,
+		updateData.SongName,
+		updateData.ReleaseDate,
+		updateData.Text,
+		updateData.Link,
+		updateData.ID,
 	)
 	if err != nil {
-		r.logger.Debugf("in repo UpdateTrackByID() r.db.ExecContext return error: ",err)
+		r.logger.Debugf("in repo UpdateTrackByID() r.db.ExecContext return error: ", err)
 		return errors.Wrap(err, "LyricsRepository.UpdateTrackByID.ExecContext")
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		r.logger.Debugf("in repo UpdateTrackByID() result.RowsAffected() return error: ",err)
+		r.logger.Debugf("in repo UpdateTrackByID() result.RowsAffected() return error: ", err)
 		return errors.Wrap(err, "LyricsRepository.UpdateTrackByID.RowsAffected")
 	}
 	if rowsAffected == 0 {
@@ -103,9 +103,11 @@ func (r lyricsRepo)UpdateTrackByID(ctx context.Context, updateData models.Update
 	return nil
 }
 
-func (r lyricsRepo)CreateTrack(ctx context.Context, song models.SongRequest, songDetail models.SongDetail) error{
-	r.logger.Debugf("in repo CreateTrack() song:%+v, songDetail:%+v\n", song, songDetail)
-	
+func (r lyricsRepo) CreateTrack(ctx context.Context, song models.SongRequest, songDetail models.SongDetail) error {
+	r.logger.Debugf("in repo CreateTrack() song:%+v\n", song)
+	r.logger.Debugf("in repo CreateTrack() Link:%+v\n", songDetail.Link)
+	r.logger.Debugf("in repo CreateTrack() DateRelease:%+v\n", songDetail.ReleaseDate)
+
 	query := `
 		INSERT INTO songs (group_name, song_name, release_date, text, link, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
@@ -113,23 +115,23 @@ func (r lyricsRepo)CreateTrack(ctx context.Context, song models.SongRequest, son
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
-		song.Group,             
-		song.Song,              
-		songDetail.ReleaseDate, 
-		songDetail.Text,        
-		songDetail.Link,      
+		song.Group,
+		song.Song,
+		songDetail.ReleaseDate,
+		songDetail.Text,
+		songDetail.Link,
 	)
 
 	if err != nil {
 		r.logger.Errorf("error in repo CreateTrack() in r.db.ExecContext: %v", err)
 		return errors.Wrap(err, "lyricsRepo.CreateTrack.ExecContext")
 	}
-	
+
 	r.logger.Debug("error in repo CreateTrack() return nil")
 	return nil
 }
 
-//GetSongByID получаем песню по ID
+// GetSongByID получаем песню по ID
 func (r lyricsRepo) GetSongByID(ctx context.Context, id uint) (models.Song, error) {
 	var song models.Song
 	query := `SELECT text FROM songs WHERE id = $1`
@@ -143,43 +145,43 @@ func (r lyricsRepo) GetSongByID(ctx context.Context, id uint) (models.Song, erro
 }
 
 func (r lyricsRepo) GetLibrary(ctx context.Context, group, song, releaseDate string, offset, limit int) ([]models.Song, int, error) {
-    var songs []models.Song
-    var total int
+	var songs []models.Song
+	var total int
 
-    baseQuery := `SELECT id, group_name, song_name, text, release_date, link FROM songs`
-    baseCountQuery := `SELECT COUNT(*) FROM songs`
-    conditions := []string{}
-    args := []interface{}{}
+	baseQuery := `SELECT id, group_name, song_name, text, release_date, link FROM songs`
+	baseCountQuery := `SELECT COUNT(*) FROM songs`
+	conditions := []string{}
+	args := []interface{}{}
 
-    if group != "" {
-        conditions = append(conditions, "group_name ILIKE $"+strconv.Itoa(len(args)+1))
-        args = append(args, "%"+group+"%")
-    }
-    if song != "" {
-        conditions = append(conditions, "song_name ILIKE $"+strconv.Itoa(len(args)+1))
-        args = append(args, "%"+song+"%")
-    }
-    if releaseDate != "" {
-        conditions = append(conditions, "release_date = $"+strconv.Itoa(len(args)+1))
-        args = append(args, releaseDate)
-    }
+	if group != "" {
+		conditions = append(conditions, "group_name ILIKE $"+strconv.Itoa(len(args)+1))
+		args = append(args, "%"+group+"%")
+	}
+	if song != "" {
+		conditions = append(conditions, "song_name ILIKE $"+strconv.Itoa(len(args)+1))
+		args = append(args, "%"+song+"%")
+	}
+	if releaseDate != "" {
+		conditions = append(conditions, "release_date = $"+strconv.Itoa(len(args)+1))
+		args = append(args, releaseDate)
+	}
 
-    if len(conditions) > 0 {
-        conditionString := " WHERE " + strings.Join(conditions, " AND ")
-        baseQuery += conditionString
-        baseCountQuery += conditionString
-    }
+	if len(conditions) > 0 {
+		conditionString := " WHERE " + strings.Join(conditions, " AND ")
+		baseQuery += conditionString
+		baseCountQuery += conditionString
+	}
 
-    baseQuery += " ORDER BY id LIMIT $" + strconv.Itoa(len(args)+1) + " OFFSET $" + strconv.Itoa(len(args)+2)
-    args = append(args, limit, offset)
+	baseQuery += " ORDER BY id LIMIT $" + strconv.Itoa(len(args)+1) + " OFFSET $" + strconv.Itoa(len(args)+2)
+	args = append(args, limit, offset)
 
-    if err := r.db.SelectContext(ctx, &songs, baseQuery, args...); err != nil {
-        return nil, 0, fmt.Errorf("failed to fetch songs: %w", err)
-    }
+	if err := r.db.SelectContext(ctx, &songs, baseQuery, args...); err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch songs: %w", err)
+	}
 
-    if err := r.db.GetContext(ctx, &total, baseCountQuery, args[:len(args)-2]...); err != nil {
-        return nil, 0, fmt.Errorf("failed to fetch total count: %w", err)
-    }
+	if err := r.db.GetContext(ctx, &total, baseCountQuery, args[:len(args)-2]...); err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch total count: %w", err)
+	}
 
-    return songs, total, nil
+	return songs, total, nil
 }

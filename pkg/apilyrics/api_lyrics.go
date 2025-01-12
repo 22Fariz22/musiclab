@@ -13,9 +13,9 @@ type LyricsAPI struct {
 	Verses string
 }
 
-//FetchLyrics идем в АПИ получать текст песни
-func FetchLyrics(ctx context.Context, artist, title string) (LyricsAPI, error) {
-	url := fmt.Sprintf("https://api.lyrics.ovh/v1/%s/%s", artist, title)
+// FetchLyrics идем в АПИ получать текст песни
+func FetchLyrics(ctx context.Context, APIUrl string, artist, title string) (LyricsAPI, error) {
+	url := fmt.Sprintf(APIUrl, artist, title)
 
 	// Создаем HTTP-запрос
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

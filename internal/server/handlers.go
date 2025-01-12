@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"strings"
 
+	_ "github.com/22Fariz22/musiclab/docs"
 	lyricsHTTP "github.com/22Fariz22/musiclab/internal/lyrics/delivery/http"
 	lyricsRepository "github.com/22Fariz22/musiclab/internal/lyrics/repository"
 	lyricsUseCase "github.com/22Fariz22/musiclab/internal/lyrics/usecase"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
-		_ "github.com/22Fariz22/musiclab/docs"
 )
 
 // Map Server Handlers
@@ -34,9 +34,9 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 	e.Static("/swagger", "./docs")
 
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		StackSize:         1 << 10, // 1 KB
-		DisablePrintStack: true,
-		DisableStackAll:   true,
+		StackSize:         s.cfg.Middleware.MiddlewareStackSize,
+		DisablePrintStack: s.cfg.Middleware.MiddlewareDisablePrintStack,
+		DisableStackAll:   s.cfg.Middleware.MiddlewareDisableStackAll,
 	}))
 	e.Use(middleware.RequestID())
 
@@ -48,9 +48,9 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 	}))
 
 	e.Use(middleware.Secure())
-	e.Use(middleware.BodyLimit("1000M"))
+	e.Use(middleware.BodyLimit(s.cfg.Middleware.MiddlewarebodyLimit))
 
-	v1 := e.Group("/api/v1")
+	v1 := e.Group(s.cfg.Middleware.MiddlewareAPIVersion)
 
 	lyricsGroup := v1.Group("/lyrics")
 

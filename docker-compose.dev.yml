@@ -1,4 +1,4 @@
-version: "3.8"
+# version: "3.8"
 
 services:
   web:
@@ -15,7 +15,7 @@ services:
     restart: always
     volumes:
       - ./:/app
-    env_file:             
+    env_file:
       - .env
     networks:
       - web_api
@@ -34,7 +34,7 @@ services:
       - ${POSTGRES_VOLUME}
     networks:
       - ${POSTGRES_NETWORK}
-  
+
   redis:
     image: ${REDIS_IMAGE}
     container_name: ${REDIS_CONTAINER_NAME}

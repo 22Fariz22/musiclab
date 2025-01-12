@@ -54,8 +54,8 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest)
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	const maxRetries = 3               // Максимальное количество попыток
-	const retryDelay = 2 * time.Second // Задержка между попытками
+	maxRetries := u.cfg.API.MaxRetries // Максимальное количество попыток
+	retryDelay := u.cfg.API.RetryDelay // Задержка между попытками
 
 	var lyrics apilyrics.LyricsAPI
 	var err error
@@ -63,7 +63,7 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest)
 	// Логика повторных попыток
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		//обращаемся к апи который выдает текст песни
-		lyrics, err = apilyrics.FetchLyrics(ctx, song.Group, song.Song)
+		lyrics, err = apilyrics.FetchLyrics(ctx, u.cfg.API.APILyric, song.Group, song.Song)
 		if err == nil {
 			// Успешный запрос — выходим из цикла
 			break
@@ -86,9 +86,11 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest)
 	songDetails := models.SongDetail{}
 	songDetails.Text = lyrics.Verses
 
-	//бесплатного или не требующего ключа сервиса,который выдает дату релиза и ютуб-ссылку, не нашел
-	songDetails.ReleaseDate = "01.01.2001"
-	songDetails.Link = "https://www.youtube.com/watch?v=Xsp3_a-PMTw"
+	//добавляем ссылку из ютуба
+	youtube := apilyrics.GetYoutubeLink(u.cfg.API.YoutubeURL, fmt.Sprintf("%s %s", song.Group, song.Song))
+	fmt.Println("youtubeURL ", youtube)
+	songDetails.Link = youtube
+	songDetails.ReleaseDate = time.Now()
 
 	// Вывод текста песни в дебаг лог
 	u.logger.Debugf("Fetched lyrics successfully: %s", songDetails.Text)
@@ -103,7 +105,7 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest)
 	return nil
 }
 
-//GetSongVerseByPage 
+// GetSongVerseByPage
 func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int) (string, error) {
 	u.logger.Debugf("in UC GetSongVerseByPage ID:%d, page:%d\n", id, page)
 
@@ -169,3 +171,4 @@ func (u lyricsUseCase) GetLibrary(ctx context.Context, group, song, releaseDate 
 
 	return songs, total, nil
 }
+

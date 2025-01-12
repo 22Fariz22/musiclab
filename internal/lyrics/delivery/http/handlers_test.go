@@ -21,7 +21,6 @@ import (
 	mockTestify "github.com/stretchr/testify/mock"
 )
 
-
 func TestPingHandler(t *testing.T) {
 	e := echo.New()
 
@@ -197,7 +196,6 @@ func ptr(s string) *string {
 	return &s
 }
 
-
 func TestCreateTrack(t *testing.T) {
 	e := echo.New()
 
@@ -262,7 +260,6 @@ func TestCreateTrack(t *testing.T) {
 	})
 }
 
-
 func TestGetSongVerseByPage(t *testing.T) {
 	e := echo.New()
 
@@ -297,8 +294,8 @@ func TestGetSongVerseByPage(t *testing.T) {
 
 	t.Run("Invalid song ID", func(t *testing.T) {
 		// Сброс предыдущих ожиданий и вызовов
-    mockUseCase.ExpectedCalls = nil
-    mockUseCase.Calls = nil
+		mockUseCase.ExpectedCalls = nil
+		mockUseCase.Calls = nil
 
 		req := httptest.NewRequest(http.MethodGet, "/verses/abc?page=1", nil)
 		rec := httptest.NewRecorder()
@@ -315,8 +312,8 @@ func TestGetSongVerseByPage(t *testing.T) {
 
 	t.Run("Invalid page number", func(t *testing.T) {
 		// Сброс предыдущих ожиданий и вызовов
-    mockUseCase.ExpectedCalls = nil
-    mockUseCase.Calls = nil
+		mockUseCase.ExpectedCalls = nil
+		mockUseCase.Calls = nil
 
 		req := httptest.NewRequest(http.MethodGet, "/verses/1?page=abc", nil)
 		rec := httptest.NewRecorder()
@@ -331,62 +328,61 @@ func TestGetSongVerseByPage(t *testing.T) {
 		assert.JSONEq(t, `{"error": "Invalid page number"}`, rec.Body.String())
 	})
 
-t.Run("Verse not found for page=2", func(t *testing.T) {
+	t.Run("Verse not found for page=2", func(t *testing.T) {
 		// Сброс предыдущих ожиданий и вызовов
-    mockUseCase.ExpectedCalls = nil
-    mockUseCase.Calls = nil
+		mockUseCase.ExpectedCalls = nil
+		mockUseCase.Calls = nil
 
-    id := 1
-    page := 2
+		id := 1
+		page := 2
 
-    // Настройка мока для возврата ошибки для page=2
-    mockUseCase.On("GetSongVerseByPage", mockTestify.Anything, uint(id), page).Return("", errors.New("verse not found"))
+		// Настройка мока для возврата ошибки для page=2
+		mockUseCase.On("GetSongVerseByPage", mockTestify.Anything, uint(id), page).Return("", errors.New("verse not found"))
 
-    req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/verses/%d?page=%d", id, page), nil)
-    rec := httptest.NewRecorder()
-    c := e.NewContext(req, rec)
-    c.SetParamNames("id")
-    c.SetParamValues(fmt.Sprintf("%d", id))
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/verses/%d?page=%d", id, page), nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues(fmt.Sprintf("%d", id))
 
-    err := h.GetSongVerseByPage()(c)
+		err := h.GetSongVerseByPage()(c)
 
-    t.Logf("Response code: %d, body: %s", rec.Code, rec.Body.String()) // Логирование для отладки
+		t.Logf("Response code: %d, body: %s", rec.Code, rec.Body.String()) // Логирование для отладки
 
-    assert.NoError(t, err)
-    assert.Equal(t, http.StatusNotFound, rec.Code)
-    assert.JSONEq(t, `{"error": "verse not found"}`, rec.Body.String())
-    mockUseCase.AssertExpectations(t)
-})
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		assert.JSONEq(t, `{"error": "verse not found"}`, rec.Body.String())
+		mockUseCase.AssertExpectations(t)
+	})
 
-t.Run("Empty text for page=1", func(t *testing.T) {
+	t.Run("Empty text for page=1", func(t *testing.T) {
 		// Сброс предыдущих ожиданий и вызовов
-    mockUseCase.ExpectedCalls = nil
-    mockUseCase.Calls = nil
+		mockUseCase.ExpectedCalls = nil
+		mockUseCase.Calls = nil
 
-    id := 1
-    page := 1
+		id := 1
+		page := 1
 
-    // Настройка мока для возврата пустого текста для page=1
-    mockUseCase.On("GetSongVerseByPage", mockTestify.Anything, uint(id), page).Return("", nil).Once()
+		// Настройка мока для возврата пустого текста для page=1
+		mockUseCase.On("GetSongVerseByPage", mockTestify.Anything, uint(id), page).Return("", nil).Once()
 
-    req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/verses/%d?page=%d", id, page), nil)
-    rec := httptest.NewRecorder()
-    c := e.NewContext(req, rec)
-    c.SetParamNames("id")
-    c.SetParamValues(fmt.Sprintf("%d", id))
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/verses/%d?page=%d", id, page), nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetParamNames("id")
+		c.SetParamValues(fmt.Sprintf("%d", id))
 
-    err := h.GetSongVerseByPage()(c)
+		err := h.GetSongVerseByPage()(c)
 
-    t.Logf("Response code: %d, body: %s", rec.Code, rec.Body.String()) // Логирование для отладки
+		t.Logf("Response code: %d, body: %s", rec.Code, rec.Body.String()) // Логирование для отладки
 
-    assert.NoError(t, err)
-    assert.Equal(t, http.StatusOK, rec.Code)
-    assert.JSONEq(t, `{"page": 1, "verse": ""}`, rec.Body.String())
-    mockUseCase.AssertExpectations(t)
-})
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.JSONEq(t, `{"page": 1, "verse": ""}`, rec.Body.String())
+		mockUseCase.AssertExpectations(t)
+	})
 
 }
-
 
 func TestGetLibrary(t *testing.T) {
 	e := echo.New()
@@ -395,42 +391,42 @@ func TestGetLibrary(t *testing.T) {
 	h := lyricsHTTP.NewLyricsHandler(nil, mockUseCase, appLogger)
 
 	t.Run("Successful response", func(t *testing.T) {
-    mockSongs := []models.Song{
-        {
-            ID:         1,
-            GroupName:  "Muse",
-            SongName:   "Uprising",
-            Text:       "Some text",
-            CreatedAt:  time.Time{},
-            UpdatedAt:  time.Time{},
-            Link:       nil,
-            ReleaseDate: nil,
-        },
-        {
-            ID:         2,
-            GroupName:  "Muse",
-            SongName:   "Madness",
-            Text:       "Other text",
-            CreatedAt:  time.Time{},
-            UpdatedAt:  time.Time{},
-            Link:       nil,
-            ReleaseDate: nil,
-        },
-    }
+		mockSongs := []models.Song{
+			{
+				ID:          1,
+				GroupName:   "Muse",
+				SongName:    "Uprising",
+				Text:        "Some text",
+				CreatedAt:   time.Time{},
+				UpdatedAt:   time.Time{},
+				Link:        nil,
+				ReleaseDate: time.Time{},
+			},
+			{
+				ID:          2,
+				GroupName:   "Muse",
+				SongName:    "Madness",
+				Text:        "Other text",
+				CreatedAt:   time.Time{},
+				UpdatedAt:   time.Time{},
+				Link:        nil,
+				ReleaseDate: time.Time{},
+			},
+		}
 
-    mockUseCase.On("GetLibrary", mockTestify.Anything, "Muse", "Uprising", "2024-11-26", 1, 10).Return(mockSongs, 2, nil)
+		mockUseCase.On("GetLibrary", mockTestify.Anything, "Muse", "Uprising", "2024-11-26", 1, 10).Return(mockSongs, 2, nil)
 
-    req := httptest.NewRequest(http.MethodGet, "/library?group=Muse&song=Uprising&release_date=2024-11-26&page=1&limit=10", nil)
-    rec := httptest.NewRecorder()
-    c := e.NewContext(req, rec)
+		req := httptest.NewRequest(http.MethodGet, "/library?group=Muse&song=Uprising&release_date=2024-11-26&page=1&limit=10", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
 
-    err := h.GetLibrary()(c)
+		err := h.GetLibrary()(c)
 
-    t.Logf("Response code: %d, body: %s", rec.Code, rec.Body.String())
+		t.Logf("Response code: %d, body: %s", rec.Code, rec.Body.String())
 
-    assert.NoError(t, err)
-    assert.Equal(t, http.StatusOK, rec.Code)
-    assert.JSONEq(t, `{
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.JSONEq(t, `{
         "data": [
             {
                 "ID": 1,
@@ -457,8 +453,8 @@ func TestGetLibrary(t *testing.T) {
         "page": 1,
         "total": 2
     }`, rec.Body.String())
-    mockUseCase.AssertExpectations(t)
-})
+		mockUseCase.AssertExpectations(t)
+	})
 
 	t.Run("Invalid page parameter", func(t *testing.T) {
 		mockUseCase.On("GetLibrary", mockTestify.Anything, "", "", "", 1, 10).
@@ -508,3 +504,4 @@ func toJSON(data interface{}) string {
 	bytes, _ := json.Marshal(data)
 	return string(bytes)
 }
+

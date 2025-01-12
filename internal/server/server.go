@@ -10,27 +10,22 @@ import (
 
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/pkg/logger"
-	"github.com/redis/go-redis/v9"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
-)
-
-const (
-	maxHeaderBytes = 1 << 20
-	ctxTimeout     = 5
+	"github.com/redis/go-redis/v9"
 )
 
 // Server struct
 type Server struct {
-	echo   *echo.Echo
-	cfg    *config.Config
-	db     *sqlx.DB
+	echo        *echo.Echo
+	cfg         *config.Config
+	db          *sqlx.DB
 	redisClient *redis.Client
-	logger logger.Logger
+	logger      logger.Logger
 }
 
 // NewServer New Server constructor
-func NewServer(cfg *config.Config, db *sqlx.DB, redisClient *redis.Client,  logger logger.Logger) *Server {
+func NewServer(cfg *config.Config, db *sqlx.DB, redisClient *redis.Client, logger logger.Logger) *Server {
 	return &Server{echo: echo.New(), cfg: cfg, db: db, redisClient: redisClient, logger: logger}
 }
 
@@ -39,13 +34,18 @@ func (s *Server) Run() error {
 		Addr:           s.cfg.Server.Port,
 		ReadTimeout:    time.Second * s.cfg.Server.ReadTimeout,
 		WriteTimeout:   time.Second * s.cfg.Server.WriteTimeout,
-		MaxHeaderBytes: maxHeaderBytes,
+		MaxHeaderBytes: s.cfg.Server.MaxHeaderBytes,
 	}
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				s.logger.Errorf("Recovered from panic: %v", r)
+			}
+		}()
 		s.logger.Infof("Server is listening on PORT: %s", s.cfg.Server.Port)
 		if err := s.echo.StartServer(server); err != nil {
-			s.logger.Fatalf("Error starting Server: ", err)
+			s.logger.Fatalf("Error starting Server: %v", err)
 		}
 	}()
 
@@ -58,7 +58,7 @@ func (s *Server) Run() error {
 
 	<-quit
 
-	ctx, shutdown := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
+	ctx, shutdown := context.WithTimeout(context.Background(), s.cfg.Server.CtxTimeout)
 	defer shutdown()
 
 	s.logger.Info("Server Exited Properly")

@@ -7,7 +7,7 @@ FILES := $(shell docker ps -aq)
 
 up:
 	echo "Starting docker environment"
-	docker-compose -f docker-compose.dev.yml up --build
+	docker compose -f docker-compose.dev.yml up --build
 
 down:
 	docker stop $(FILES)

@@ -11,10 +11,12 @@ import (
 
 // App config struct
 type Config struct {
-	Server   ServerConfig
-	Postgres PostgresConfig
-	Logger   Logger
-	Redis    RedisConfig
+	Server     ServerConfig
+	Middleware MiddlewareConfig
+	Postgres   PostgresConfig
+	Logger     Logger
+	Redis      RedisConfig
+	API        APIConfig
 }
 
 // Server config struct
@@ -25,7 +27,19 @@ type ServerConfig struct {
 	ReadTimeout       time.Duration
 	WriteTimeout      time.Duration
 	CtxDefaultTimeout time.Duration
+	MaxHeaderBytes    int
+	CtxTimeout        time.Duration
 	Debug             bool
+}
+
+// Middleware config struct
+type MiddlewareConfig struct {
+	MiddlewareStackSize         int
+	MiddlewareDisablePrintStack bool
+	MiddlewareDisableStackAll   bool
+	MiddlewareLevel             int
+	MiddlewarebodyLimit         string
+	MiddlewareAPIVersion        string
 }
 
 // Logger config
@@ -58,6 +72,13 @@ type RedisConfig struct {
 	PoolTimeout  int
 }
 
+type APIConfig struct {
+	APILyric   string
+	MaxRetries int
+	RetryDelay time.Duration
+	YoutubeURL string
+}
+
 // LoadConfig reads environment variables into a Config struct
 func LoadConfig() (*Config, error) {
 	// Load .env file
@@ -73,7 +94,17 @@ func LoadConfig() (*Config, error) {
 			ReadTimeout:       getEnvAsDuration("READ_TIMEOUT", 10*time.Second),
 			WriteTimeout:      getEnvAsDuration("WRITE_TIMEOUT", 10*time.Second),
 			CtxDefaultTimeout: getEnvAsDuration("CTX_DEFAULT_TIMEOUT", 12*time.Second),
+			MaxHeaderBytes:    getEnvAsInt("MAX_HEADER_BYTES", 1<<20),
+			CtxTimeout:        getEnvAsDuration("CTX_TIMEOUT", 5*time.Second),
 			Debug:             getEnvAsBool("DEBUG", false),
+		},
+		Middleware: MiddlewareConfig{
+			MiddlewareStackSize:         getEnvAsInt("MIDDLEWARE_STACK_SIZE", 1024), // Default to 1024 (1 << 10)
+			MiddlewareDisablePrintStack: getEnvAsBool("MIDDLEWARE_DISABLE_PRINT_STACK", true),
+			MiddlewareDisableStackAll:   getEnvAsBool("MIDDLEWARE_DISABLE_STACK_ALL", true),
+			MiddlewareLevel:             getEnvAsInt("MIDDLEWARE_LEVEL", 5),
+			MiddlewarebodyLimit:         getEnv("MIDDLEWARE_BODY_LIMIT", "1000M"),
+			MiddlewareAPIVersion:        getEnv("MIDDLEWARE_API_VERSION", "/api/v1"),
 		},
 		Logger: Logger{
 			Development:       getEnvAsBool("LOGGER_DEVELOPMENT", true),
@@ -99,6 +130,12 @@ func LoadConfig() (*Config, error) {
 			MinIdleConns: getEnvAsInt("REDIS_MIN_IDLE_CONNS", 10),
 			PoolSize:     getEnvAsInt("REDIS_POOL_SIZE", 500),
 			PoolTimeout:  getEnvAsInt("REDIS_POOL_TIMEOUT", 30),
+		},
+		API: APIConfig{
+			APILyric:   getEnv("API_LYRIC", "https://api.lyrics.ovh/v1/%s/%s"),
+			MaxRetries: getEnvAsInt("MAX_RETRIES", 3),
+			RetryDelay: getEnvAsDuration("RETRY_DELAY", 1*time.Second),
+			YoutubeURL: getEnv("YOUTUBE_URL", "https://www.youtube.com/results?search_query=%s"),
 		},
 	}, nil
 }
