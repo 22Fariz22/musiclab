@@ -62,7 +62,7 @@ func (h lyricsHandlers) Ping() echo.HandlerFunc {
 func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler DeleteSongByGroupAndTrack")
-		
+
 		ctx := c.Request().Context()
 
 		groupName := c.QueryParam("group")
@@ -101,87 +101,68 @@ func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 // @Failure 404 {object} map[string]string "Song not found"
 // @Failure 500 {object} map[string]string "Failed to update song"
 // @Router /lyrics/update [put]
-func (h lyricsHandlers)UpdateTrackByID()echo.HandlerFunc{
+func (h lyricsHandlers) UpdateTrackByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
-	h.logger.Debugf("in handler UpdateTrackByID")
+		h.logger.Debugf("in handler UpdateTrackByID")
 
-	var updateData models.UpdateTrackRequest
+		var updateData models.UpdateTrackRequest
 
-	ctx:=c.Request().Context()
+		ctx := c.Request().Context()
 
-	if err := c.Bind(&updateData); err != nil {
-		h.logger.Debug("in handler UpdateTrackByID() Bind() return error: ", err)
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "invalid JSON format",
-		})
-	}
-
-	err := h.lyricsUsecase.UpdateTrackByID(ctx, updateData)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
-			return c.JSON(http.StatusNotFound, map[string]string{
-				"error": "song not found",
+		if err := c.Bind(&updateData); err != nil {
+			h.logger.Debug("in handler UpdateTrackByID() Bind() return error: ", err)
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "invalid JSON format",
 			})
 		}
-		h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "failed to update song",
-		})
-	}
 
-	h.logger.Debug("in handler UpdateTrackByID() return statusOk")
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "track updated successfully",
-	})
+		err := h.lyricsUsecase.UpdateTrackByID(ctx, updateData)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
+				return c.JSON(http.StatusNotFound, map[string]string{
+					"error": "song not found",
+				})
+			}
+			h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "failed to update song",
+			})
+		}
+
+		h.logger.Debug("in handler UpdateTrackByID() return statusOk")
+		return c.JSON(http.StatusOK, map[string]string{
+			"message": "track updated successfully",
+		})
 	}
 }
 
-// CreateTrack godoc
-// @Summary Создать новую песню
-// @Description Добавляет новую песню в библиотеку
-// @Tags Lyrics
-// @Accept json
-// @Produce json
-// @Param song body models.SongRequest true "Данные песни"
-// @Success 201 {object} map[string]string "Track created successfully"
-// @Failure 400 {object} map[string]string "Invalid JSON fields"
-// @Failure 500 {object} map[string]string "Failed to create track"
-// @Router /lyrics/create [post]
-func (h lyricsHandlers)CreateTrack()echo.HandlerFunc{
+func (h lyricsHandlers) CreateTrack() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler CreateTrack")
-		
-		ctx:=c.Request().Context()
+
+		ctx := c.Request().Context()
 
 		var songRequest models.SongRequest
 
 		if err := c.Bind(&songRequest); err != nil {
-		h.logger.Errorf("Failed to Bind() in CreateTrack(): %v", err)
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Invalid JSON for SongRequest",
-		})
-	}
-
-	if err := utils.ValidateStruct(ctx, &songRequest); err != nil {
-			h.logger.Errorf("Failed to ValidateStruct() in CreateTrack(): %v", err)
-			return c.JSON(http.StatusBadRequest, map[string]string{
-				"error": "Invalid JSON fields",
-				"details": err.Error(), 
-			})
+			h.logger.Debugf("Failed to Bind() in CreateTrack(): %v", err)
+			return c.NoContent(http.StatusBadRequest)
 		}
 
-	err := h.lyricsUsecase.CreateTrack(ctx, songRequest)
+		if err := utils.ValidateStruct(ctx, &songRequest); err != nil {
+			h.logger.Debugf("Failed to ValidateStruct() in CreateTrack(): %v", err)
+			return c.NoContent(http.StatusBadRequest)
+		}
+
+		var songDetail models.SongDetail
+		err := h.lyricsUsecase.CreateTrack(ctx, songDetail)
 		if err != nil {
-			h.logger.Errorf("Failed to create track: %v", err)
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"error": "Failed to create track",
-			})
+			h.logger.Debugf("Failed to create track: %v", err)
+			return c.NoContent(http.StatusInternalServerError)
 		}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Track created successfully",
-	})
+		return c.JSON(http.StatusOK, songDetail)
 	}
 }
 
@@ -220,7 +201,7 @@ func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
 		}
 
 		// Вызываем usecase для получения куплета
-		verse, err := h.lyricsUsecase.GetSongVerseByPage(ctx, uint(id), page) 
+		verse, err := h.lyricsUsecase.GetSongVerseByPage(ctx, uint(id), page)
 		if err != nil {
 			h.logger.Errorf("Error fetching verse: %v", err)
 			return c.JSON(http.StatusNotFound, map[string]string{
@@ -230,12 +211,12 @@ func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
 
 		// Проверяем на пустой текст для первой страницы
 		if page == 1 && verse == "" {
-					h.logger.Debugf("Page %d has an empty verse", page)
-					return c.JSON(http.StatusOK, map[string]interface{}{
-							"page":  page,
-							"verse": "",
-					})
-			}
+			h.logger.Debugf("Page %d has an empty verse", page)
+			return c.JSON(http.StatusOK, map[string]interface{}{
+				"page":  page,
+				"verse": "",
+			})
+		}
 
 		// Возвращаем куплет клиенту
 		return c.JSON(http.StatusOK, map[string]interface{}{
@@ -259,8 +240,8 @@ func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
 // @Failure      500  {object}  map[string]string
 // @Router       /lyrics/library [get]
 func (h lyricsHandlers) GetLibrary() echo.HandlerFunc {
-  return func(c echo.Context) error {
-    ctx := c.Request().Context()
+	return func(c echo.Context) error {
+		ctx := c.Request().Context()
 
 		group := c.QueryParam("group")
 		song := c.QueryParam("song")
@@ -268,12 +249,12 @@ func (h lyricsHandlers) GetLibrary() echo.HandlerFunc {
 
 		page, err := strconv.Atoi(c.QueryParam("page"))
 		if err != nil || page <= 0 {
-			page = 1 
+			page = 1
 		}
 
 		limit, err := strconv.Atoi(c.QueryParam("limit"))
 		if err != nil || limit <= 0 {
-			limit = 10 
+			limit = 10
 		}
 
 		songs, total, err := h.lyricsUsecase.GetLibrary(ctx, group, song, releaseDate, page, limit)
@@ -290,5 +271,5 @@ func (h lyricsHandlers) GetLibrary() echo.HandlerFunc {
 			"total": total,
 			"data":  songs,
 		})
-    }
+	}
 }

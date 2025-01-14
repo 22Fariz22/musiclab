@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,8 +31,10 @@ func NewServer(cfg *config.Config, db *sqlx.DB, redisClient *redis.Client, logge
 }
 
 func (s *Server) Run() error {
+	serverAddr := fmt.Sprintf("%s:%s", s.cfg.Server.BaseUrl, s.cfg.Server.Port)
+
 	server := &http.Server{
-		Addr:           s.cfg.Server.Port,
+		Addr:           serverAddr,
 		ReadTimeout:    time.Second * s.cfg.Server.ReadTimeout,
 		WriteTimeout:   time.Second * s.cfg.Server.WriteTimeout,
 		MaxHeaderBytes: s.cfg.Server.MaxHeaderBytes,

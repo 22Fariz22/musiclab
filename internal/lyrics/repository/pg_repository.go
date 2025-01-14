@@ -103,31 +103,78 @@ func (r lyricsRepo) UpdateTrackByID(ctx context.Context, updateData models.Updat
 	return nil
 }
 
-func (r lyricsRepo) CreateTrack(ctx context.Context, song models.SongRequest, songDetail models.SongDetail) error {
-	r.logger.Debugf("in repo CreateTrack() song:%+v\n", song)
-	r.logger.Debugf("in repo CreateTrack() Link:%+v\n", songDetail.Link)
-	r.logger.Debugf("in repo CreateTrack() DateRelease:%+v\n", songDetail.ReleaseDate)
+func (r lyricsRepo) CreateTrack(ctx context.Context, songRequest models.SongRequest, songDetail models.SongDetail) error {
+	// Начинаем транзакцию
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Wrap(err, "lyricsRepo.CreateTrack.BeginTx")
+	}
+	defer tx.Rollback()
 
-	query := `
-		INSERT INTO songs (group_name, song_name, release_date, text, link, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-	`
-	_, err := r.db.ExecContext(
+	// Получаем или создаем группу
+	var groupID uint
+	queryGroup := `
+        WITH ins AS (
+            INSERT INTO groups (name, created_at, updated_at)
+            VALUES ($1, NOW(), NOW())
+            ON CONFLICT (name) DO NOTHING
+            RETURNING id
+        )
+        SELECT id FROM ins
+        UNION ALL
+        SELECT id FROM groups WHERE name = $1
+        LIMIT 1
+    `
+	err = tx.QueryRowContext(ctx, queryGroup, songRequest.Group).Scan(&groupID)
+	if err != nil {
+		r.logger.Errorf("error getting/creating group: %v", err)
+		return errors.Wrap(err, "lyricsRepo.CreateTrack.QueryGroup")
+	}
+
+	// Проверяем существование песни у этой группы
+	var exists bool
+	queryCheck := `
+        SELECT EXISTS (
+            SELECT 1 FROM songs 
+            WHERE group_id = $1 AND song_name = $2
+        )
+    `
+	err = tx.QueryRowContext(ctx, queryCheck, groupID, songRequest.Song).Scan(&exists)
+	if err != nil {
+		r.logger.Errorf("error checking song existence: %v", err)
+		return errors.Wrap(err, "lyricsRepo.CreateTrack.CheckExistence")
+	}
+
+	if exists {
+		return fmt.Errorf("song '%s' already exists for group '%s'", songRequest.Song, songRequest.Group)
+	}
+
+	// Добавляем песню
+	queryInsert := `
+        INSERT INTO songs (group_id, song_name, release_date, text, link, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+    `
+	_, err = tx.ExecContext(
 		ctx,
-		query,
-		song.Group,
-		song.Song,
+		queryInsert,
+		groupID,
+		songRequest.Song,
 		songDetail.ReleaseDate,
 		songDetail.Text,
 		songDetail.Link,
 	)
-
 	if err != nil {
-		r.logger.Errorf("error in repo CreateTrack() in r.db.ExecContext: %v", err)
-		return errors.Wrap(err, "lyricsRepo.CreateTrack.ExecContext")
+		r.logger.Errorf("error inserting song: %v", err)
+		return errors.Wrap(err, "lyricsRepo.CreateTrack.InsertSong")
 	}
 
-	r.logger.Debug("error in repo CreateTrack() return nil")
+	// Подтверждаем транзакцию
+	if err = tx.Commit(); err != nil {
+		r.logger.Errorf("error committing transaction: %v", err)
+		return errors.Wrap(err, "lyricsRepo.CreateTrack.Commit")
+	}
+
+	r.logger.Debug("successfully created track")
 	return nil
 }
 

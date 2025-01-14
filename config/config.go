@@ -22,6 +22,7 @@ type Config struct {
 // Server config struct
 type ServerConfig struct {
 	AppVersion        string
+	BaseUrl           string
 	Port              string
 	Mode              string
 	ReadTimeout       time.Duration
@@ -73,11 +74,9 @@ type RedisConfig struct {
 }
 
 type APIConfig struct {
-	APILyric       string
-	MaxRetries     int
-	RetryDelay     time.Duration
-	YoutubeMainURL string
-	YoutubeURL     string
+	MaxRetries int
+	RetryDelay time.Duration
+	APIPath    string
 }
 
 // LoadConfig reads environment variables into a Config struct
@@ -90,7 +89,8 @@ func LoadConfig() (*Config, error) {
 	return &Config{
 		Server: ServerConfig{
 			AppVersion:        getEnv("APP_VERSION", "1.0.0"),
-			Port:              getEnv("SERVER_PORT", ":8080"),
+			BaseUrl:           getEnv("SERVER_BASE_URL", "localhost"),
+			Port:              getEnv("SERVER_PORT", "8080"),
 			Mode:              getEnv("MODE", "Development"),
 			ReadTimeout:       getEnvAsDuration("READ_TIMEOUT", 10*time.Second),
 			WriteTimeout:      getEnvAsDuration("WRITE_TIMEOUT", 10*time.Second),
@@ -133,11 +133,9 @@ func LoadConfig() (*Config, error) {
 			PoolTimeout:  getEnvAsInt("REDIS_POOL_TIMEOUT", 30),
 		},
 		API: APIConfig{
-			APILyric:       getEnv("API_LYRIC", "https://api.lyrics.ovh/v1/%s/%s"),
-			MaxRetries:     getEnvAsInt("MAX_RETRIES", 3),
-			RetryDelay:     getEnvAsDuration("RETRY_DELAY", 1*time.Second),
-			YoutubeMainURL: getEnv("YOUTUBE_MAIN_URL", "https://www.youtube.com%s"),
-			YoutubeURL:     getEnv("YOUTUBE_URL", "https://www.youtube.com/results?search_query=%s"),
+			MaxRetries: getEnvAsInt("MAX_RETRIES", 3),
+			RetryDelay: getEnvAsDuration("RETRY_DELAY", 1*time.Second),
+			APIPath:    getEnv("API_PATH", "/info"),
 		},
 	}, nil
 }

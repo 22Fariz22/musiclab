@@ -2,7 +2,11 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -19,10 +23,20 @@ type lyricsUseCase struct {
 	lyricsRepo  lyrics.Repository
 	redisClient *redis.Client
 	logger      logger.Logger
+	httpClient  *http.Client
 }
 
 func NewLyricsUseCase(cfg *config.Config, lyricsRepo lyrics.Repository, redisClient *redis.Client, logger logger.Logger) lyrics.UseCase {
-	return &lyricsUseCase{cfg: cfg, lyricsRepo: lyricsRepo, redisClient: redisClient, logger: logger}
+	httpClient := &http.Client{
+		Timeout: 5 * time.Second, // Таймаут может быть взят из cfg
+	}
+	return &lyricsUseCase{
+		cfg:         cfg,
+		lyricsRepo:  lyricsRepo,
+		redisClient: redisClient,
+		logger:      logger,
+		httpClient:  httpClient,
+	}
 }
 
 // Ping check
@@ -49,60 +63,95 @@ func (u lyricsUseCase) UpdateTrackByID(ctx context.Context, updateData models.Up
 	return u.lyricsRepo.UpdateTrackByID(ctx, updateData)
 }
 
-func (u lyricsUseCase) CreateTrack(ctx context.Context, song models.SongRequest) error {
+func (u lyricsUseCase) CreateTrack(ctx context.Context, songRequest models.SongRequest) (models.SongDetail, error) {
 	u.logger.Debug("in usecase CreateTrack()\n")
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
+	fullURL, err := u.BuildAPIURL(songRequest.Group, songRequest.Song)
+	if err != nil {
+		u.logger.Errorf("failed to build API URL: %v", err)
+		return models.SongDetail{}, err
+	}
+
 	maxRetries := u.cfg.API.MaxRetries // Максимальное количество попыток
 	retryDelay := u.cfg.API.RetryDelay // Задержка между попытками
 
-	var lyrics apilyrics.LyricsAPI
-	var err error
+	var songDetails models.SongDetail
+	var lastErr error
 
 	// Логика повторных попыток
 	for attempt := 1; attempt <= maxRetries; attempt++ {
-		//обращаемся к апи который выдает текст песни
-		lyrics, err = apilyrics.FetchLyrics(ctx, u.cfg.API.APILyric, song.Group, song.Song)
-		if err == nil {
-			// Успешный запрос — выходим из цикла
-			break
+		select {
+		case <-ctx.Done():
+			u.logger.Warnf("context cancelled during fetch: %v", ctx.Err())
+			return models.SongDetail{}, fmt.Errorf("context cancelled: %w", ctx.Err())
+		default:
+			songDetails, err = u.FetchAPI(ctx, fullURL)
+			if err == nil {
+				break
+			}
+			lastErr = err
+			u.logger.Warnf("attempt %d/%d failed to fetch lyrics: %v", attempt, maxRetries, err)
+			time.Sleep(retryDelay)
 		}
-
-		// Логируем ошибку и пытаемся повторить, если это временная ошибка
-		u.logger.Warnf("Attempt %d: failed to fetch lyrics: %v", attempt, err)
-
-		// Если это последняя попытка, возвращаем ошибку
-		if attempt == maxRetries {
-			u.logger.Errorf("All attempts to fetch lyrics failed")
-			return fmt.Errorf("failed to fetch lyrics after %d attempts: %w", maxRetries, err)
-		}
-
-		// Задержка перед следующей попыткой
-		time.Sleep(retryDelay)
 	}
 
-	//создаем данные для передачи обогащенной информации в репозиторий
-	songDetails := models.SongDetail{}
-	songDetails.Text = lyrics.Verses
+	if lastErr != nil {
+		u.logger.Errorf("all attempts to fetch lyrics failed: %v", lastErr)
+		return models.SongDetail{}, fmt.Errorf("failed to fetch lyrics: %w", lastErr)
+	}
 
-	//добавляем ссылку из ютуба
-	youtube := apilyrics.GetYoutubeLink(u.cfg.API.YoutubeMainURL, u.cfg.API.YoutubeURL, fmt.Sprintf("%s %s", song.Group, song.Song))
-	fmt.Println("youtubeURL ", youtube)
-	songDetails.Link = youtube
-	songDetails.ReleaseDate = time.Now()
+	if err := u.lyricsRepo.CreateTrack(ctx, songRequest, songDetails); err != nil {
+		u.logger.Errorf("failed to save track: %v", err)
+		return songDetails, fmt.Errorf("saving track: %w", err)
+	}
 
-	// Вывод текста песни в дебаг лог
-	u.logger.Debugf("Fetched lyrics successfully: %s", songDetails.Text)
+	u.logger.Infof("track created successfully: %+v", songDetails)
+	return songDetails, nil
+}
 
-	err = u.lyricsRepo.CreateTrack(ctx, song, songDetails)
+func (u lyricsUseCase) BuildAPIURL(group, song string) (string, error) {
+	APIAddr := fmt.Sprintf("%s:%s%s", u.cfg.Server.BaseUrl, u.cfg.Server.Port, u.cfg.API.APIPath)
+	parsedURL, err := url.Parse(APIAddr)
 	if err != nil {
-		u.logger.Errorf("Failed to save track in repository: %v", err)
-		return fmt.Errorf("failed to save track: %w", err)
+		return "", fmt.Errorf("parsing URL: %w", err)
 	}
 
-	u.logger.Debugf("In usecase in CreateTrack() successfully created: %+v", songDetails)
-	return nil
+	q := parsedURL.Query()
+	q.Set("group", group)
+	q.Set("song", song)
+	parsedURL.RawQuery = q.Encode()
+
+	return parsedURL.String(), nil
+}
+
+func (u *lyricsUseCase) FetchAPI(ctx context.Context, url string) (models.SongDetail, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		u.logger.Errorf("failed to create request: %v", err)
+		return models.SongDetail{}, fmt.Errorf("creating request: %w", err)
+	}
+
+	resp, err := u.httpClient.Do(req)
+	if err != nil {
+		u.logger.Errorf("request failed: %v", err)
+		return models.SongDetail{}, fmt.Errorf("making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return models.SongDetail{}, fmt.Errorf("API returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var songDetail models.SongDetail
+	if err := json.NewDecoder(resp.Body).Decode(&songDetail); err != nil {
+		u.logger.Errorf("failed to decode response: %v", err)
+		return models.SongDetail{}, fmt.Errorf("decoding response: %w", err)
+	}
+
+	return songDetail, nil
 }
 
 // GetSongVerseByPage
