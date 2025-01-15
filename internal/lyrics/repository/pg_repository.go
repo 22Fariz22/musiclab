@@ -146,7 +146,7 @@ func (r lyricsRepo) CreateTrack(ctx context.Context, songRequest models.SongRequ
 	}
 
 	if exists {
-		return fmt.Errorf("song '%s' already exists for group '%s'", songRequest.Song, songRequest.Group)
+		return nil
 	}
 
 	// Добавляем песню

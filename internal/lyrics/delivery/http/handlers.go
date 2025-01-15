@@ -155,8 +155,7 @@ func (h lyricsHandlers) CreateTrack() echo.HandlerFunc {
 			return c.NoContent(http.StatusBadRequest)
 		}
 
-		var songDetail models.SongDetail
-		err := h.lyricsUsecase.CreateTrack(ctx, songDetail)
+		songDetail, err := h.lyricsUsecase.CreateTrack(ctx, songRequest)
 		if err != nil {
 			h.logger.Debugf("Failed to create track: %v", err)
 			return c.NoContent(http.StatusInternalServerError)

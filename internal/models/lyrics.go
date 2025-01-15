@@ -10,9 +10,9 @@ type SongRequest struct {
 
 // SongDetail для ответа
 type SongDetail struct {
-	ReleaseDate time.Time `json:"releaseDate" validate:"required"`
-	Text        string    `json:"text" validate:"required"`
-	Link        string    `json:"link" validate:"required"`
+	ReleaseDate string `json:"releaseDate" validate:"required"`
+	Text        string `json:"text" validate:"required"`
+	Link        string `json:"link" validate:"required"`
 }
 
 // UpdateTrackRequest обновление информации
@@ -39,7 +39,7 @@ type Song struct {
 	GroupID     uint      `gorm:"not null;index;uniqueIndex:idx_group_song,priority:1" db:"group_id"`
 	Group       Group     `gorm:"foreignKey:GroupID"`
 	SongName    string    `gorm:"type:varchar(255);not null;uniqueIndex:idx_group_song,priority:2;index" db:"song_name"` // добавляем отдельный индекс, если часто ищем по имени
-	ReleaseDate time.Time `gorm:"index" db:"release_date"`
+	ReleaseDate string    `db:"release_date"`
 	Text        string    `gorm:"type:text" db:"text"`
 	Link        *string   `gorm:"index" db:"link"`
 	CreatedAt   time.Time `gorm:"index" db:"created_at"`

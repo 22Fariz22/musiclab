@@ -13,7 +13,6 @@ import (
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/internal/lyrics"
 	"github.com/22Fariz22/musiclab/internal/models"
-	"github.com/22Fariz22/musiclab/pkg/apilyrics"
 	"github.com/22Fariz22/musiclab/pkg/logger"
 	"github.com/redis/go-redis/v9"
 )
@@ -28,8 +27,9 @@ type lyricsUseCase struct {
 
 func NewLyricsUseCase(cfg *config.Config, lyricsRepo lyrics.Repository, redisClient *redis.Client, logger logger.Logger) lyrics.UseCase {
 	httpClient := &http.Client{
-		Timeout: 5 * time.Second, // Таймаут может быть взят из cfg
+		Timeout: 5 * time.Second,
 	}
+
 	return &lyricsUseCase{
 		cfg:         cfg,
 		lyricsRepo:  lyricsRepo,
@@ -113,6 +113,7 @@ func (u lyricsUseCase) CreateTrack(ctx context.Context, songRequest models.SongR
 
 func (u lyricsUseCase) BuildAPIURL(group, song string) (string, error) {
 	APIAddr := fmt.Sprintf("%s:%s%s", u.cfg.Server.BaseUrl, u.cfg.Server.Port, u.cfg.API.APIPath)
+
 	parsedURL, err := url.Parse(APIAddr)
 	if err != nil {
 		return "", fmt.Errorf("parsing URL: %w", err)
@@ -123,10 +124,14 @@ func (u lyricsUseCase) BuildAPIURL(group, song string) (string, error) {
 	q.Set("song", song)
 	parsedURL.RawQuery = q.Encode()
 
+	u.logger.Debugf("APIAddr:%s", APIAddr)
+	u.logger.Debugf("parsedURL:%s", parsedURL.String())
+
 	return parsedURL.String(), nil
 }
 
 func (u *lyricsUseCase) FetchAPI(ctx context.Context, url string) (models.SongDetail, error) {
+	u.logger.Debugf("UrlAPI: %s", url)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		u.logger.Errorf("failed to create request: %v", err)
@@ -152,6 +157,8 @@ func (u *lyricsUseCase) FetchAPI(ctx context.Context, url string) (models.SongDe
 	}
 
 	return songDetail, nil
+
+	// return models.SongDetail{ReleaseDate: "01.03.89", Text: "you drive me craaaazy!", Link: "oiu.ru/ssdffggf"}, nil
 }
 
 // GetSongVerseByPage
