@@ -11,6 +11,7 @@ import (
 
 	"github.com/22Fariz22/musiclab/config"
 	"github.com/22Fariz22/musiclab/pkg/logger"
+	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
@@ -25,9 +26,24 @@ type Server struct {
 	logger      logger.Logger
 }
 
+// CustomValidator wraps validator
+type CustomValidator struct {
+	Validator *validator.Validate
+}
+
+// Validate method for Echo
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.Validator.Struct(i)
+}
+
 // NewServer New Server constructor
 func NewServer(cfg *config.Config, db *sqlx.DB, redisClient *redis.Client, logger logger.Logger) *Server {
-	return &Server{echo: echo.New(), cfg: cfg, db: db, redisClient: redisClient, logger: logger}
+	e := echo.New()
+
+	// Устанавливаем кастомный валидатор
+	e.Validator = &CustomValidator{Validator: validator.New()}
+
+	return &Server{echo: e, cfg: cfg, db: db, redisClient: redisClient, logger: logger}
 }
 
 func (s *Server) Run() error {

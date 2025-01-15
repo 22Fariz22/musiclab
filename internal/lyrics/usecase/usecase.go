@@ -59,7 +59,7 @@ func (u lyricsUseCase) DeleteSongByGroupAndTrack(ctx context.Context, groupName 
 }
 
 func (u lyricsUseCase) UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error {
-	u.logger.Debugf("in usecase UpdateTrackByID() ID:%d", updateData)
+	u.logger.Debugf("in usecase UpdateTrackByID() ID:%d", updateData.ID)
 	return u.lyricsRepo.UpdateTrackByID(ctx, updateData)
 }
 
@@ -231,4 +231,3 @@ func (u lyricsUseCase) GetLibrary(ctx context.Context, group, song, text, releas
 
 	return songs, total, nil
 }
-

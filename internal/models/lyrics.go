@@ -18,9 +18,9 @@ type SongDetail struct {
 // UpdateTrackRequest обновление информации
 type UpdateTrackRequest struct {
 	ID          uint    `json:"id" validate:"required"`
-	GroupName   string  `json:"group" validate:"required"`
-	SongName    string  `json:"song" validate:"required"`
-	ReleaseDate *string `json:"release_date,omitempty"`
+	GroupName   *string `json:"group" validate:"required,min=1"`
+	SongName    *string `json:"song" validate:"required,min=1"`
+	ReleaseDate *string `json:"release_date" validate:"required,min=1"`
 	Text        *string `json:"text,omitempty"`
 	Link        *string `json:"link,omitempty"`
 }

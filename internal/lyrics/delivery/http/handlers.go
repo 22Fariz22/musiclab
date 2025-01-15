@@ -101,14 +101,14 @@ func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 // @Failure 404 {object} map[string]string "Song not found"
 // @Failure 500 {object} map[string]string "Failed to update song"
 // @Router /lyrics/update [put]
+
 func (h lyricsHandlers) UpdateTrackByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler UpdateTrackByID")
 
 		var updateData models.UpdateTrackRequest
 
-		ctx := c.Request().Context()
-
+		// Привязка данных из запроса
 		if err := c.Bind(&updateData); err != nil {
 			h.logger.Debug("in handler UpdateTrackByID() Bind() return error: ", err)
 			return c.JSON(http.StatusBadRequest, map[string]string{
@@ -116,21 +116,31 @@ func (h lyricsHandlers) UpdateTrackByID() echo.HandlerFunc {
 			})
 		}
 
-		err := h.lyricsUsecase.UpdateTrackByID(ctx, updateData)
+		// Валидация данных
+		if err := c.Validate(&updateData); err != nil {
+			h.logger.Debug("in handler UpdateTrackByID() Validate() return error: ", err)
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error":   "validation failed",
+				"details": err.Error(),
+			})
+		}
+
+		// Логика обновления данных
+		err := h.lyricsUsecase.UpdateTrackByID(c.Request().Context(), updateData)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
+				h.logger.Debug("song not found")
 				return c.JSON(http.StatusNotFound, map[string]string{
 					"error": "song not found",
 				})
 			}
-			h.logger.Debug("in handler h.lyricsUsecase.UpdateTrackByID() return error: ", err)
+			h.logger.Debug("failed to update song: ", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{
 				"error": "failed to update song",
 			})
 		}
 
-		h.logger.Debug("in handler UpdateTrackByID() return statusOk")
+		h.logger.Debug("track updated successfully")
 		return c.JSON(http.StatusOK, map[string]string{
 			"message": "track updated successfully",
 		})

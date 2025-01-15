@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/22Fariz22/musiclab/internal/lyrics"
 	"github.com/22Fariz22/musiclab/internal/models"
@@ -66,46 +67,79 @@ func (r lyricsRepo) DeleteSongByGroupAndTrack(ctx context.Context, groupName str
 }
 
 func (r lyricsRepo) UpdateTrackByID(ctx context.Context, updateData models.UpdateTrackRequest) error {
-	r.logger.Debugf("in repo UpdateTrackByID() updateData:%+v\n", updateData)
+	r.logger.Debugf("in repo UpdateTrackByID() updateData: %+v", updateData)
 
-	query := `
-	UPDATE songs
-	SET 
-		group_name = COALESCE($1, group_name),
-		song_name = COALESCE($2, song_name),
-		release_date = COALESCE($3, release_date),
-		text = COALESCE($4, text),
-		link = COALESCE($5, link),
-		updated_at = NOW()
-		WHERE id = $6
-		`
+	// Проверяем, что GroupName и SongName присутствуют (на всякий случай)
+	if updateData.GroupName == nil || updateData.SongName == nil {
+		r.logger.Debug("GroupName or SongName is nil, but should not be")
+		return errors.New("group name and song name cannot be nil")
+	}
 
-	result, err := r.db.ExecContext(
-		ctx,
-		query,
-		updateData.GroupName,
-		updateData.SongName,
-		updateData.ReleaseDate,
-		updateData.Text,
-		updateData.Link,
-		updateData.ID,
-	)
+	// Проверяем существование или создаем группу
+	var groupID uint
+	err := r.db.QueryRowContext(ctx, "SELECT id FROM groups WHERE name = $1", *updateData.GroupName).Scan(&groupID)
 	if err != nil {
-		r.logger.Debugf("in repo UpdateTrackByID() r.db.ExecContext return error: ", err)
+		if err == sql.ErrNoRows {
+			r.logger.Debugf("group not found, creating new group with name: %s", *updateData.GroupName)
+			err = r.db.QueryRowContext(ctx, "INSERT INTO groups (name,created_at,updated_at) VALUES ($1,$2,$2) RETURNING id", *updateData.GroupName, time.Now()).Scan(&groupID)
+			if err != nil {
+				r.logger.Debugf("error creating new group: %v", err)
+				return errors.Wrap(err, "failed to create new group")
+			}
+		} else {
+			r.logger.Debugf("error fetching group ID for name %s: %v", *updateData.GroupName, err)
+			return errors.Wrap(err, "error fetching group ID")
+		}
+	}
+
+	// Начинаем формировать запрос для обновления песни
+	query := "UPDATE songs SET updated_at = NOW(), group_id = $1, song_name = $2"
+	params := []interface{}{groupID, *updateData.SongName}
+	paramCount := 3
+
+	// Добавляем опциональные поля
+	if updateData.ReleaseDate != nil {
+		query += fmt.Sprintf(", release_date = $%d", paramCount)
+		params = append(params, *updateData.ReleaseDate)
+		paramCount++
+	}
+
+	if updateData.Text != nil {
+		query += fmt.Sprintf(", text = $%d", paramCount)
+		params = append(params, *updateData.Text)
+		paramCount++
+	}
+
+	if updateData.Link != nil {
+		query += fmt.Sprintf(", link = $%d", paramCount)
+		params = append(params, *updateData.Link)
+		paramCount++
+	}
+
+	// Добавляем условие WHERE
+	query += fmt.Sprintf(" WHERE id = $%d", paramCount)
+	params = append(params, updateData.ID)
+
+	// Выполняем запрос
+	r.logger.Debugf("executing query: %s with params: %+v", query, params)
+	result, err := r.db.ExecContext(ctx, query, params...)
+	if err != nil {
+		r.logger.Debugf("error in UpdateTrackByID() r.db.ExecContext: %v", err)
 		return errors.Wrap(err, "LyricsRepository.UpdateTrackByID.ExecContext")
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		r.logger.Debugf("in repo UpdateTrackByID() result.RowsAffected() return error: ", err)
+		r.logger.Debugf("error in UpdateTrackByID() result.RowsAffected(): %v", err)
 		return errors.Wrap(err, "LyricsRepository.UpdateTrackByID.RowsAffected")
 	}
+
 	if rowsAffected == 0 {
-		r.logger.Debug("in repo UpdateTrackByID() rowsAffected == 0")
-		return errors.Wrap(sql.ErrNoRows, "LyricsRepository.UpdateTrackByID.rowsAffected")
+		r.logger.Debug("no rows affected, song not found")
+		return errors.Wrap(sql.ErrNoRows, "song not found")
 	}
 
-	r.logger.Debug("in repo UpdateTrackByID() return nil")
+	r.logger.Debug("successfully updated track")
 	return nil
 }
 
