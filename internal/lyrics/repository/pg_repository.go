@@ -35,25 +35,31 @@ func (r lyricsRepo) Ping() error {
 	return nil
 }
 
+// DeleteSongByGroupAndTrack Удаление песни
 func (r lyricsRepo) DeleteSongByGroupAndTrack(ctx context.Context, groupName string, trackName string) error {
 	r.logger.Debugf("In repo. Deleting song. Group: %s, Track: %s", groupName, trackName)
 
-	query := "DELETE FROM songs WHERE group_name = $1 AND song_name = $2"
+	query := `
+        DELETE FROM songs
+        WHERE group_id = (
+            SELECT id FROM groups WHERE name = $1
+        ) AND song_name = $2
+    `
 
 	result, err := r.db.ExecContext(ctx, query, groupName, trackName)
 	if err != nil {
-		r.logger.Debugf("error in repo r.db.ExecContext(): ", err)
-		return errors.Wrap(err, "SongRepository.DeleteSongByGroupAndTrack.ExecContext")
+		r.logger.Debugf("error in repo r.db.ExecContext(): %v", err)
+		return fmt.Errorf("failed to execute delete query: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		r.logger.Debugf("error in repo result.RowsAffected(): ", err)
-		return errors.Wrap(err, "SongRepository.DeleteSongByGroupAndName.RowsAffected")
+		r.logger.Debugf("error in repo result.RowsAffected(): %v", err)
+		return fmt.Errorf("failed to fetch rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
-		r.logger.Debugf("in repo rowsAffected == 0")
-		return errors.Wrap(sql.ErrNoRows, "SongRepository.DeleteSongByGroupAndName.rowsAffected")
+		r.logger.Debugf("no rows were deleted")
+		return sql.ErrNoRows
 	}
 
 	return nil
