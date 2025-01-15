@@ -65,7 +65,7 @@ func (u lyricsUseCase) UpdateTrackByID(ctx context.Context, updateData models.Up
 
 func (u lyricsUseCase) CreateTrack(ctx context.Context, songRequest models.SongRequest) (models.SongDetail, error) {
 	u.logger.Debug("in usecase CreateTrack()\n")
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, u.cfg.API.APICtxTimeout)
 	defer cancel()
 
 	fullURL, err := u.BuildAPIURL(songRequest.Group, songRequest.Song)
@@ -158,7 +158,11 @@ func (u *lyricsUseCase) FetchAPI(ctx context.Context, url string) (models.SongDe
 
 	return songDetail, nil
 
-	// return models.SongDetail{ReleaseDate: "01.03.89", Text: "you drive me craaaazy!", Link: "oiu.ru/ssdffggf"}, nil
+	// return models.SongDetail{
+	// 	ReleaseDate: "01.03.89",
+	// 	Text:        "Ooh baby, don't you know I suffer?\nOoh baby, can you hear me moan?\nYou caught me under false pretenses\nHow long before you let me go?\n\nOoh\nYou set my soul alight\nOoh\nYou set my soul alight",
+	// 	Link:        "yputube.com/sd2ff6ggf",
+	// }, nil
 }
 
 // GetSongVerseByPage
@@ -188,7 +192,7 @@ func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int
 		songText = song.Text
 
 		// Сохраняем песню в кэше
-		err = u.redisClient.Set(ctx, cacheKey, songText, 6*time.Hour).Err()
+		err = u.redisClient.Set(ctx, cacheKey, songText, u.cfg.Redis.SongTextCasheTTL).Err()
 		if err != nil {
 			u.logger.Errorf("Error caching song in Redis: %v", err)
 		}
@@ -214,12 +218,12 @@ func prepareLyrics(lyrics string) []string {
 	return lines
 }
 
-func (u lyricsUseCase) GetLibrary(ctx context.Context, group, song, releaseDate string, page, limit int) ([]models.Song, int, error) {
-	u.logger.Debugf("Fetching library with filters: group=%s, song=%s, releaseDate=%s, page=%d, limit=%d", group, song, releaseDate, page, limit)
+func (u lyricsUseCase) GetLibrary(ctx context.Context, group, song, text, releaseDate string, page, limit int) ([]models.Song, int, error) {
+	u.logger.Debugf("Fetching library with filters: group=%s, song=%s,text=%s, releaseDate=%s, page=%d, limit=%d", group, song, releaseDate, page, limit)
 
 	offset := (page - 1) * limit
 
-	songs, total, err := u.lyricsRepo.GetLibrary(ctx, group, song, releaseDate, offset, limit)
+	songs, total, err := u.lyricsRepo.GetLibrary(ctx, group, song, text, releaseDate, offset, limit)
 	if err != nil {
 		u.logger.Errorf("Error fetching library from repository: %v", err)
 		return nil, 0, err

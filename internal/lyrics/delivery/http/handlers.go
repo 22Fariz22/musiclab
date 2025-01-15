@@ -244,6 +244,7 @@ func (h lyricsHandlers) GetLibrary() echo.HandlerFunc {
 
 		group := c.QueryParam("group")
 		song := c.QueryParam("song")
+		text := c.QueryParam("text")
 		releaseDate := c.QueryParam("release_date")
 
 		page, err := strconv.Atoi(c.QueryParam("page"))
@@ -256,7 +257,7 @@ func (h lyricsHandlers) GetLibrary() echo.HandlerFunc {
 			limit = 10
 		}
 
-		songs, total, err := h.lyricsUsecase.GetLibrary(ctx, group, song, releaseDate, page, limit)
+		songs, total, err := h.lyricsUsecase.GetLibrary(ctx, group, song, text, releaseDate, page, limit)
 		if err != nil {
 			h.logger.Errorf("Error in GetLibrary: %v", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{

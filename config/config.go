@@ -64,19 +64,21 @@ type PostgresConfig struct {
 }
 
 type RedisConfig struct {
-	Addr         string
-	Password     string
-	DB           int
-	DefaultDB    int
-	MinIdleConns int
-	PoolSize     int
-	PoolTimeout  int
+	Addr             string
+	Password         string
+	DB               int
+	DefaultDB        int
+	MinIdleConns     int
+	PoolSize         int
+	PoolTimeout      time.Duration
+	SongTextCasheTTL time.Duration
 }
 
 type APIConfig struct {
-	MaxRetries int
-	RetryDelay time.Duration
-	APIPath    string
+	MaxRetries    int
+	RetryDelay    time.Duration
+	APIPath       string
+	APICtxTimeout time.Duration
 }
 
 // LoadConfig reads environment variables into a Config struct
@@ -124,18 +126,20 @@ func LoadConfig() (*Config, error) {
 			PgDriver:           getEnv("POSTGRES_DRIVER", "pgx"),
 		},
 		Redis: RedisConfig{
-			Addr:         getEnv("REDIS_ADDR", "redis:6379"),
-			Password:     getEnv("REDIS_PASSWORD", ""),
-			DB:           getEnvAsInt("REDIS_DB", 0),
-			DefaultDB:    getEnvAsInt("REDIS_DEFAULT_DB", 0),
-			MinIdleConns: getEnvAsInt("REDIS_MIN_IDLE_CONNS", 10),
-			PoolSize:     getEnvAsInt("REDIS_POOL_SIZE", 500),
-			PoolTimeout:  getEnvAsInt("REDIS_POOL_TIMEOUT", 30),
+			Addr:             getEnv("REDIS_ADDR", "redis:6379"),
+			Password:         getEnv("REDIS_PASSWORD", ""),
+			DB:               getEnvAsInt("REDIS_DB", 0),
+			DefaultDB:        getEnvAsInt("REDIS_DEFAULT_DB", 0),
+			MinIdleConns:     getEnvAsInt("REDIS_MIN_IDLE_CONNS", 10),
+			PoolSize:         getEnvAsInt("REDIS_POOL_SIZE", 500),
+			PoolTimeout:      getEnvAsDuration("REDIS_POOL_TIMEOUT", 30*time.Second),
+			SongTextCasheTTL: getEnvAsDuration("SONG_TEXT_CACHE_TTL", 6*time.Hour),
 		},
 		API: APIConfig{
-			MaxRetries: getEnvAsInt("MAX_RETRIES", 3),
-			RetryDelay: getEnvAsDuration("RETRY_DELAY", 1*time.Second),
-			APIPath:    getEnv("API_PATH", "/info"),
+			MaxRetries:    getEnvAsInt("MAX_RETRIES", 3),
+			RetryDelay:    getEnvAsDuration("RETRY_DELAY", 1*time.Second),
+			APIPath:       getEnv("API_PATH", "/info"),
+			APICtxTimeout: getEnvAsDuration("API_CTX_TIMEOUT", 5*time.Second),
 		},
 	}, nil
 }

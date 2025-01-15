@@ -38,6 +38,7 @@ type Song struct {
 	ID          uint      `gorm:"primaryKey" db:"id"`
 	GroupID     uint      `gorm:"not null;index;uniqueIndex:idx_group_song,priority:1" db:"group_id"`
 	Group       Group     `gorm:"foreignKey:GroupID"`
+	GroupName   string    `gorm:"-" db:"group_name"`
 	SongName    string    `gorm:"type:varchar(255);not null;uniqueIndex:idx_group_song,priority:2;index" db:"song_name"` // добавляем отдельный индекс, если часто ищем по имени
 	ReleaseDate string    `db:"release_date"`
 	Text        string    `gorm:"type:text" db:"text"`

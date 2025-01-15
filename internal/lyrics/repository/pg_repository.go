@@ -191,41 +191,52 @@ func (r lyricsRepo) GetSongByID(ctx context.Context, id uint) (models.Song, erro
 	return song, nil
 }
 
-func (r lyricsRepo) GetLibrary(ctx context.Context, group, song, releaseDate string, offset, limit int) ([]models.Song, int, error) {
+// GetLibrary Получение данных библиотеки с фильтрацией по всем полям и пагинацией
+func (r lyricsRepo) GetLibrary(ctx context.Context, group, song, text, releaseDate string, offset, limit int) ([]models.Song, int, error) {
 	var songs []models.Song
 	var total int
 
-	baseQuery := `SELECT id, group_name, song_name, text, release_date, link FROM songs`
-	baseCountQuery := `SELECT COUNT(*) FROM songs`
+	baseQuery := `SELECT s.id, s.group_id, g.name AS group_name, s.song_name, s.text, s.release_date, s.link
+                  FROM songs s
+                  INNER JOIN groups g ON s.group_id = g.id`
+	baseCountQuery := `SELECT COUNT(*) FROM songs s INNER JOIN groups g ON s.group_id = g.id`
 	conditions := []string{}
 	args := []interface{}{}
 
 	if group != "" {
-		conditions = append(conditions, "group_name ILIKE $"+strconv.Itoa(len(args)+1))
+		conditions = append(conditions, "g.name ILIKE $"+strconv.Itoa(len(args)+1)) // Фильтрация по названию группы
 		args = append(args, "%"+group+"%")
 	}
 	if song != "" {
-		conditions = append(conditions, "song_name ILIKE $"+strconv.Itoa(len(args)+1))
+		conditions = append(conditions, "s.song_name ILIKE $"+strconv.Itoa(len(args)+1)) // Фильтрация по названию песни
 		args = append(args, "%"+song+"%")
 	}
 	if releaseDate != "" {
-		conditions = append(conditions, "release_date = $"+strconv.Itoa(len(args)+1))
+		conditions = append(conditions, "s.release_date = $"+strconv.Itoa(len(args)+1)) // Фильтрация по дате релиза
 		args = append(args, releaseDate)
 	}
+	if text != "" {
+		conditions = append(conditions, "s.text ILIKE $"+strconv.Itoa(len(args)+1)) // Фильтрация по тексту песни
+		args = append(args, "%"+text+"%")
+	}
 
+	// Добавляем условия, если они есть
 	if len(conditions) > 0 {
 		conditionString := " WHERE " + strings.Join(conditions, " AND ")
 		baseQuery += conditionString
 		baseCountQuery += conditionString
 	}
 
-	baseQuery += " ORDER BY id LIMIT $" + strconv.Itoa(len(args)+1) + " OFFSET $" + strconv.Itoa(len(args)+2)
+	// Добавляем сортировку и пагинацию
+	baseQuery += " ORDER BY s.id LIMIT $" + strconv.Itoa(len(args)+1) + " OFFSET $" + strconv.Itoa(len(args)+2)
 	args = append(args, limit, offset)
 
+	// Выполняем запрос на выборку данных
 	if err := r.db.SelectContext(ctx, &songs, baseQuery, args...); err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch songs: %w", err)
 	}
 
+	// Выполняем запрос на подсчет общего количества записей
 	if err := r.db.GetContext(ctx, &total, baseCountQuery, args[:len(args)-2]...); err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch total count: %w", err)
 	}
