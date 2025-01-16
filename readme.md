@@ -38,4 +38,4 @@ make up
 
 ### Swagger UI
 
-- Доступен по адресу: [https://localhost:8080/swagger/index.html](https://localhost:8080/swagger/index.html)
+- Доступен по адресу: [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
