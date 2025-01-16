@@ -19,151 +19,36 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/lyrics/create": {
-            "post": {
-                "description": "Добавляет новую песню в библиотеку",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Lyrics"
-                ],
-                "summary": "Создать новую песню",
-                "parameters": [
-                    {
-                        "description": "Данные песни",
-                        "name": "song",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.SongRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Track created successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid JSON fields",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to create track",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/lyrics/delete": {
-            "delete": {
-                "description": "Удаляет песню из библиотеки по названию группы и трека",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Lyrics"
-                ],
-                "summary": "Удалить песню",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Название группы",
-                        "name": "group",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Название трека",
-                        "name": "track",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Track is deleted",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Group and song name are required",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Track not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to delete song",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/lyrics/library": {
+        "/library": {
             "get": {
-                "description": "Получить список песен с фильтрацией по полям и пагинацией",
+                "description": "Возвращает список песен на основе фильтров",
                 "tags": [
-                    "Lyrics"
+                    "Songs"
                 ],
-                "summary": "Получить библиотеку",
+                "summary": "Получение библиотеки",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Название группы",
+                        "description": "Фильтр по группе",
                         "name": "group",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Название песни",
+                        "description": "Фильтр по названию песни",
                         "name": "song",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Дата релиза",
-                        "name": "releaseDate",
+                        "description": "Фильтр по тексту",
+                        "name": "text",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по дате выпуска",
+                        "name": "release_date",
                         "in": "query"
                     },
                     {
@@ -174,30 +59,21 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Количество элементов на странице",
+                        "description": "Количество записей на странице",
                         "name": "limit",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Список песен",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Ошибка сервера",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -240,9 +116,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/lyrics/update": {
+        "/songs": {
             "put": {
-                "description": "Обновляет данные песни по идентификатору",
+                "description": "Обновляет данные песни по ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -250,13 +126,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Lyrics"
+                    "Songs"
                 ],
-                "summary": "Обновить данные песни",
+                "summary": "Обновление песни",
                 "parameters": [
                     {
-                        "description": "Данные для обновления песни",
-                        "name": "song",
+                        "description": "Данные для обновления",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -266,7 +142,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Track updated successfully",
+                        "description": "Песня успешно обновлена",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -275,7 +151,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid JSON format",
+                        "description": "Некорректный запрос",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -284,7 +160,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Song not found",
+                        "description": "Песня не найдена",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -293,7 +169,95 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to update song",
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Создает новую песню на основе данных запроса",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Songs"
+                ],
+                "summary": "Создание песни",
+                "parameters": [
+                    {
+                        "description": "Данные новой песни",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SongRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Созданная песня",
+                        "schema": {
+                            "$ref": "#/definitions/models.SongDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные данные"
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера"
+                    }
+                }
+            }
+        },
+        "/songs/{id}": {
+            "delete": {
+                "description": "Удаляет песню из базы данных по ID",
+                "tags": [
+                    "Songs"
+                ],
+                "summary": "Удаление песни",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID песни",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Песня успешно удалена"
+                    },
+                    "400": {
+                        "description": "Некорректный ID",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Песня не найдена",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -304,19 +268,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/lyrics/verses/{id}": {
+        "/songs/{id}/verses": {
             "get": {
-                "description": "Возвращает конкретный куплет песни по идентификатору песни и номеру страницы",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Возвращает куплет песни по ID песни и номеру страницы",
                 "tags": [
-                    "Lyrics"
+                    "Songs"
                 ],
-                "summary": "Получить конкретный куплет песни",
+                "summary": "Получение куплета",
                 "parameters": [
                     {
                         "type": "integer",
@@ -327,7 +285,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Номер страницы (куплета)",
+                        "description": "Номер страницы",
                         "name": "page",
                         "in": "query",
                         "required": true
@@ -335,14 +293,14 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Куплет песни",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Некорректный ID или номер страницы",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -351,7 +309,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Куплет не найден",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -364,7 +322,31 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.SongDetail": {
+            "description": "Response containing details of a song",
+            "type": "object",
+            "required": [
+                "link",
+                "releaseDate",
+                "text"
+            ],
+            "properties": {
+                "link": {
+                    "description": "External link to the song\nRequired: true",
+                    "type": "string"
+                },
+                "releaseDate": {
+                    "description": "Release date of the song\nRequired: true",
+                    "type": "string"
+                },
+                "text": {
+                    "description": "Lyrics or text of the song\nRequired: true",
+                    "type": "string"
+                }
+            }
+        },
         "models.SongRequest": {
+            "description": "Request payload for adding a new song",
             "type": "object",
             "required": [
                 "group",
@@ -372,39 +354,52 @@ const docTemplate = `{
             ],
             "properties": {
                 "group": {
+                    "description": "Group name of the song\nRequired: true\nMin length: 1",
                     "type": "string",
                     "minLength": 1
                 },
                 "song": {
+                    "description": "Song name\nRequired: true\nMin length: 1",
                     "type": "string",
                     "minLength": 1
                 }
             }
         },
         "models.UpdateTrackRequest": {
+            "description": "Request payload for updating song details",
             "type": "object",
             "required": [
                 "group",
                 "id",
+                "release_date",
                 "song"
             ],
             "properties": {
                 "group": {
-                    "type": "string"
+                    "description": "Group name\nRequired: true\nMin length: 1",
+                    "type": "string",
+                    "minLength": 1
                 },
                 "id": {
+                    "description": "ID of the track to update\nRequired: true",
                     "type": "integer"
                 },
                 "link": {
+                    "description": "External link to the song",
                     "type": "string"
                 },
                 "release_date": {
-                    "type": "string"
+                    "description": "Release date\nRequired: true",
+                    "type": "string",
+                    "minLength": 1
                 },
                 "song": {
-                    "type": "string"
+                    "description": "Song name\nRequired: true\nMin length: 1",
+                    "type": "string",
+                    "minLength": 1
                 },
                 "text": {
+                    "description": "Lyrics or text of the song",
                     "type": "string"
                 }
             }

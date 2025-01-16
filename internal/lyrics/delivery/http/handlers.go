@@ -46,19 +46,16 @@ func (h lyricsHandlers) Ping() echo.HandlerFunc {
 	}
 }
 
-// DeleteSongByGroupAndTrack godoc
-// @Summary Удалить песню
-// @Description Удаляет песню из библиотеки по названию группы и трека
-// @Tags Lyrics
-// @Accept json
-// @Produce json
-// @Param group query string true "Название группы"
-// @Param track query string true "Название трека"
-// @Success 200 {string} string "Track is deleted"
-// @Failure 400 {object} map[string]string "Group and song name are required"
-// @Failure 404 {object} map[string]string "Track not found"
-// @Failure 500 {object} map[string]string "Failed to delete song"
-// @Router /lyrics/delete [delete]
+// DeleteSongByID удаляет песню по её ID.
+// @Summary Удаление песни
+// @Description Удаляет песню из базы данных по ID
+// @Tags Songs
+// @Param id path int true "ID песни"
+// @Success 204 "Песня успешно удалена"
+// @Failure 400 {object} map[string]string "Некорректный ID"
+// @Failure 404 {object} map[string]string "Песня не найдена"
+// @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Router /songs/{id} [delete]
 func (h lyricsHandlers) DeleteSongByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler DeleteSongByID")
@@ -88,6 +85,18 @@ func (h lyricsHandlers) DeleteSongByID() echo.HandlerFunc {
 	}
 }
 
+// UpdateTrackByID обновляет данные песни.
+// @Summary Обновление песни
+// @Description Обновляет данные песни по ID
+// @Tags Songs
+// @Accept json
+// @Produce json
+// @Param body body models.UpdateTrackRequest true "Данные для обновления"
+// @Success 200 {object} map[string]string "Песня успешно обновлена"
+// @Failure 400 {object} map[string]string "Некорректный запрос"
+// @Failure 404 {object} map[string]string "Песня не найдена"
+// @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Router /songs [put]
 func (h lyricsHandlers) UpdateTrackByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler UpdateTrackByID")
@@ -133,6 +142,17 @@ func (h lyricsHandlers) UpdateTrackByID() echo.HandlerFunc {
 	}
 }
 
+// CreateTrack создает новую песню.
+// @Summary Создание песни
+// @Description Создает новую песню на основе данных запроса
+// @Tags Songs
+// @Accept json
+// @Produce json
+// @Param body body models.SongRequest true "Данные новой песни"
+// @Success 200 {object} models.SongDetail "Созданная песня"
+// @Failure 400 "Некорректные данные"
+// @Failure 500 "Внутренняя ошибка сервера"
+// @Router /songs [post]
 func (h lyricsHandlers) CreateTrack() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler CreateTrack")
@@ -161,18 +181,16 @@ func (h lyricsHandlers) CreateTrack() echo.HandlerFunc {
 	}
 }
 
-// GetSongVerseByPage godoc
-// @Summary Получить конкретный куплет песни
-// @Description Возвращает конкретный куплет песни по идентификатору песни и номеру страницы
-// @Tags Lyrics
-// @Accept json
-// @Produce json
+// GetSongVerseByID получает куплет песни.
+// @Summary Получение куплета
+// @Description Возвращает куплет песни по ID песни и номеру страницы
+// @Tags Songs
 // @Param id path int true "ID песни"
-// @Param page query int true "Номер страницы (куплета)"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Router /lyrics/verses/{id} [get]
+// @Param page query int true "Номер страницы"
+// @Success 200 {object} map[string]interface{} "Куплет песни"
+// @Failure 400 {object} map[string]string "Некорректный ID или номер страницы"
+// @Failure 404 {object} map[string]string "Куплет не найден"
+// @Router /songs/{id}/verses [get]
 func (h lyricsHandlers) GetSongVerseByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debug("In handler GetSongVerseByPage")
@@ -221,19 +239,19 @@ func (h lyricsHandlers) GetSongVerseByID() echo.HandlerFunc {
 	}
 }
 
-// GetLibrary godoc
-// @Summary      Получить библиотеку
-// @Description  Получить список песен с фильтрацией по полям и пагинацией
-// @Tags         Lyrics
-// @Param        group        query    string  false  "Название группы"
-// @Param        song         query    string  false  "Название песни"
-// @Param        releaseDate  query    string  false  "Дата релиза"
-// @Param        page         query    int     false  "Номер страницы"
-// @Param        limit        query    int     false  "Количество элементов на странице"
-// @Success      200  {object}  map[string]interface{}
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /lyrics/library [get]
+// GetLibrary возвращает библиотеку песен.
+// @Summary Получение библиотеки
+// @Description Возвращает список песен на основе фильтров
+// @Tags Songs
+// @Param group query string false "Фильтр по группе"
+// @Param song query string false "Фильтр по названию песни"
+// @Param text query string false "Фильтр по тексту"
+// @Param release_date query string false "Фильтр по дате выпуска"
+// @Param page query int false "Номер страницы"
+// @Param limit query int false "Количество записей на странице"
+// @Success 200 {object} map[string]interface{} "Список песен"
+// @Failure 500 {object} map[string]string "Ошибка сервера"
+// @Router /library [get]
 func (h lyricsHandlers) GetLibrary() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
