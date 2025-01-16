@@ -8,7 +8,7 @@ import (
 // Map lyrics routes
 func MapLyricsRoutes(lyricsGroup *echo.Group, h lyrics.Handlers) {
 	lyricsGroup.GET("/ping", h.Ping())
-	lyricsGroup.DELETE("/delete", h.DeleteSongByGroupAndTrack())
+	lyricsGroup.DELETE("/delete/:id", h.DeleteSongByID())
 	lyricsGroup.PUT("/update", h.UpdateTrackByID())
 	lyricsGroup.POST("/create", h.CreateTrack())
 	lyricsGroup.GET("/verses/:id", h.GetSongVerseByID())

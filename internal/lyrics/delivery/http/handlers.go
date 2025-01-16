@@ -59,33 +59,32 @@ func (h lyricsHandlers) Ping() echo.HandlerFunc {
 // @Failure 404 {object} map[string]string "Track not found"
 // @Failure 500 {object} map[string]string "Failed to delete song"
 // @Router /lyrics/delete [delete]
-func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
+func (h lyricsHandlers) DeleteSongByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		h.logger.Debugf("in handler DeleteSongByGroupAndTrack")
+		h.logger.Debugf("in handler DeleteSongByID")
 
 		ctx := c.Request().Context()
 
-		groupName := c.QueryParam("group")
-		trackName := c.QueryParam("track")
-		h.logger.Debugf("in handler queryparams group=%s track=%s", groupName, trackName)
-
-		if groupName == "" || trackName == "" {
-			h.logger.Debug("Group and song name are required")
-			return c.JSON(http.StatusBadRequest, "Group and song name are required")
+		// Получаем ID песни из параметра маршрута
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil || id <= 0 {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "Invalid ID format",
+			})
 		}
 
-		err := h.lyricsUsecase.DeleteSongByGroupAndTrack(ctx, groupName, trackName)
+		err = h.lyricsUsecase.DeleteSongByID(ctx, uint(id))
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				h.logger.Debug("Track not found")
+				h.logger.Debugf("song with ID=%d not found", id)
 				return c.JSON(http.StatusNotFound, "Track not found")
 			}
-			h.logger.Debugf("error in handler DeleteSongByGroupAndTrack()", err)
-			return c.JSON(http.StatusInternalServerError, "Failed to delete song")
+			h.logger.Debugf("error in handler DeleteSongByID()", err)
+			return c.JSON(http.StatusInternalServerError, "Failed to delete song due to internal error")
 		}
 
-		h.logger.Debugf("http.StatusOK, Track %s is deleted", trackName)
-		return c.JSON(http.StatusOK, "Track is deleted")
+		h.logger.Debugf("http.StatusOK, song with ID %d is deleted")
+		return c.NoContent(http.StatusOK)
 	}
 }
 

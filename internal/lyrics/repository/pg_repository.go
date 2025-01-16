@@ -37,17 +37,15 @@ func (r lyricsRepo) Ping() error {
 }
 
 // DeleteSongByGroupAndTrack Удаление песни
-func (r lyricsRepo) DeleteSongByGroupAndTrack(ctx context.Context, groupName string, trackName string) error {
-	r.logger.Debugf("In repo. Deleting song. Group: %s, Track: %s", groupName, trackName)
+func (r lyricsRepo) DeleteSongByID(ctx context.Context, ID uint) error {
+	r.logger.Debugf("In repo. Deleting ID %d", ID)
 
 	query := `
         DELETE FROM songs
-        WHERE group_id = (
-            SELECT id FROM groups WHERE name = $1
-        ) AND song_name = $2
+        WHERE id = $1
     `
 
-	result, err := r.db.ExecContext(ctx, query, groupName, trackName)
+	result, err := r.db.ExecContext(ctx, query, ID)
 	if err != nil {
 		r.logger.Debugf("error in repo r.db.ExecContext(): %v", err)
 		return fmt.Errorf("failed to execute delete query: %w", err)
