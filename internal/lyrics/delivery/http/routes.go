@@ -11,6 +11,6 @@ func MapLyricsRoutes(lyricsGroup *echo.Group, h lyrics.Handlers) {
 	lyricsGroup.DELETE("/delete", h.DeleteSongByGroupAndTrack())
 	lyricsGroup.PUT("/update", h.UpdateTrackByID())
 	lyricsGroup.POST("/create", h.CreateTrack())
-	lyricsGroup.GET("/verses/:id", h.GetSongVerseByPage())
+	lyricsGroup.GET("/verses/:id", h.GetSongVerseByID())
 	lyricsGroup.GET("/library", h.GetLibrary())
 }

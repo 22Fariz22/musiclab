@@ -89,19 +89,6 @@ func (h lyricsHandlers) DeleteSongByGroupAndTrack() echo.HandlerFunc {
 	}
 }
 
-// UpdateTrackByID godoc
-// @Summary Обновить данные песни
-// @Description Обновляет данные песни по идентификатору
-// @Tags Lyrics
-// @Accept json
-// @Produce json
-// @Param song body models.UpdateTrackRequest true "Данные для обновления песни"
-// @Success 200 {object} map[string]string "Track updated successfully"
-// @Failure 400 {object} map[string]string "Invalid JSON format"
-// @Failure 404 {object} map[string]string "Song not found"
-// @Failure 500 {object} map[string]string "Failed to update song"
-// @Router /lyrics/update [put]
-
 func (h lyricsHandlers) UpdateTrackByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debugf("in handler UpdateTrackByID")
@@ -187,7 +174,7 @@ func (h lyricsHandlers) CreateTrack() echo.HandlerFunc {
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Router /lyrics/verses/{id} [get]
-func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
+func (h lyricsHandlers) GetSongVerseByID() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		h.logger.Debug("In handler GetSongVerseByPage")
 
@@ -210,7 +197,7 @@ func (h lyricsHandlers) GetSongVerseByPage() echo.HandlerFunc {
 		}
 
 		// Вызываем usecase для получения куплета
-		verse, err := h.lyricsUsecase.GetSongVerseByPage(ctx, uint(id), page)
+		verse, err := h.lyricsUsecase.GetSongVerseByID(ctx, uint(id), page)
 		if err != nil {
 			h.logger.Errorf("Error fetching verse: %v", err)
 			return c.JSON(http.StatusNotFound, map[string]string{

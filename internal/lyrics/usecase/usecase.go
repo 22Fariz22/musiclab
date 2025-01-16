@@ -130,6 +130,7 @@ func (u lyricsUseCase) BuildAPIURL(group, song string) (string, error) {
 	return parsedURL.String(), nil
 }
 
+// FetchAPI обращение к API
 func (u *lyricsUseCase) FetchAPI(ctx context.Context, url string) (models.SongDetail, error) {
 	u.logger.Debugf("UrlAPI: %s", url)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -166,7 +167,7 @@ func (u *lyricsUseCase) FetchAPI(ctx context.Context, url string) (models.SongDe
 }
 
 // GetSongVerseByPage
-func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int) (string, error) {
+func (u lyricsUseCase) GetSongVerseByID(ctx context.Context, id uint, page int) (string, error) {
 	u.logger.Debugf("in UC GetSongVerseByPage ID:%d, page:%d\n", id, page)
 
 	cacheKey := fmt.Sprintf("song:%d", id)
@@ -185,7 +186,7 @@ func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int
 		// Если в кэше ничего нет, идём в базу данных
 		song, err := u.lyricsRepo.GetSongByID(ctx, id)
 		if err != nil {
-			u.logger.Debugf("error in uc u.lyricsRepo.GetSongByID():", err)
+			u.logger.Debugf("error in uc u.lyricsRepo.GetSongByID():%v", err)
 			return "", fmt.Errorf("failed to get song from database: %w", err)
 		}
 
@@ -200,6 +201,9 @@ func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int
 		u.logger.Debugf("Cache hit for key: %s", cacheKey)
 		songText = cachedSong
 	}
+
+	u.logger.Debugf("text song:", songText)
+
 	// Разделяем текст на куплеты
 	verses := prepareLyrics(songText)
 
@@ -214,8 +218,35 @@ func (u lyricsUseCase) GetSongVerseByPage(ctx context.Context, id uint, page int
 
 // prepareLyrics делим песню на куплеты
 func prepareLyrics(lyrics string) []string {
-	lines := strings.Split(lyrics, "\\n")
-	return lines
+	// lines := strings.Split(lyrics, "\\\n")
+	// // lines = strings.Split(lyrics, "\n")
+	// return lines
+
+	// Разделяем текст по строкам
+	lines := strings.Split(lyrics, "\n")
+
+	var verses []string
+	var currentVerse []string
+
+	for _, line := range lines {
+		// Если строка пустая, завершаем текущий куплет
+		if strings.TrimSpace(line) == "" {
+			if len(currentVerse) > 0 {
+				verses = append(verses, strings.Join(currentVerse, "\n"))
+				currentVerse = []string{}
+			}
+		} else {
+			// Добавляем строку к текущему куплету
+			currentVerse = append(currentVerse, line)
+		}
+	}
+
+	// Добавляем последний куплет, если он не пуст
+	if len(currentVerse) > 0 {
+		verses = append(verses, strings.Join(currentVerse, "\n"))
+	}
+
+	return verses
 }
 
 func (u lyricsUseCase) GetLibrary(ctx context.Context, group, song, text, releaseDate string, page, limit int) ([]models.Song, int, error) {
